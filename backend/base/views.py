@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User, Topic, Room, Message
 from .serializers import UserSerializer, TopicSerializer, RoomSerializer, MessageSerializer
+from rest_framework import generics
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -41,3 +42,4 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+

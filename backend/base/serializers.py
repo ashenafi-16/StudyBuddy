@@ -1,33 +1,38 @@
-from rest_framework import serilizers
+from rest_framework import serializers
 from .models import User, Topic, Room , Message
 
-class UserSerializer(serilizers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'name', 'email', 'bio', 'avatar']
+        fields = ['username', 'name', 'email', 'password']
 
-class TopicSerializer(serilizers.ModelSerializer):
+class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = '__all__'
 
-class RoomSerializer(serilizers.ModelSerializer):
+class RoomSerializer(serializers.ModelSerializer):
     host = UserSerializer(read_only=True)
     topic = TopicSerializer(read_only=True)
     participants = UserSerializer(many=True, read_only=True)
 
-    topic_id = serilizers.PrimaryKeyRelatedField(
+    topic_id = serializers.PrimaryKeyRelatedField(
         queryset = Topic.objects.all(), source='topic', write_only=True
     )
     
     class Meta:
         model = Room
-        fields = ['id', 'host', 'topic', 'topic_id', 'name', 'description', 'participants','update', 'created']
+        fields = ['id', 'host', 'topic', 'topic_id', 'name', 'description', 'participants','updated', 'created']
 
-class MessageSerializer(serilizers.ModelSerializer):
+class MessageSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Message
-        fields = ['id', 'user', 'room', 'body', 'update', 'created']
-        
+        fields = ['id', 'user', 'room', 'body', 'updated', 'created']
+    
+
+class UserProfile(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email', 'avatar', 'bio', 'username']

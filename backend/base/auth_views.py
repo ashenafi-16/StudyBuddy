@@ -1,9 +1,9 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserProfile
 from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
@@ -34,3 +34,17 @@ class RegisterView(generics.CreateAPIView):
             'user': UserSerializer(user).data,
             'tokens': token_data
         }, status=status.HTTP_201_CREATED)
+
+# class UserDetailView(generics.RetrieveUpdateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserProfile
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         return self.request.user
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfile
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
