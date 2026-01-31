@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from django.db import models
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
@@ -40,8 +41,22 @@ class DashboardView(APIView):
     def get(self, request):
         streak, _ = StudyStreak.objects.get_or_create(user=request.user)
         achievements = UserAchievement.objects.filter(user=request.user)
+        
+        # Calculate total study time
+        total_time = StudyActivity.objects.filter(user=request.user).aggregate(
+            total=models.Sum('duration_minutes')
+        )['total'] or 0
+
+        # Get recent activity (last 365 days)
+        last_year = timezone.now().date() - timezone.timedelta(days=365)
+        recent_activity = StudyActivity.objects.filter(
+            user=request.user,
+            date__gte=last_year
+        ).order_by('date')
 
         return Response({
             "streak": StudyStreakSerializer(streak).data,
-            "achievements": UserAchievementSerializer(achievements, many=True).data
+            "achievements": UserAchievementSerializer(achievements, many=True).data,
+            "total_study_minutes": total_time,
+            "recent_activity": StudyActivitySerializer(recent_activity, many=True).data
         })

@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import PomodoroSession
 from .serializers import PomodoroSessionSerializer, PomodoroSettingsSerializer
@@ -14,7 +15,7 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     serializer_class = PomodoroSessionSerializer
 
     def get_permissions(self):
-        if self.action == 'settings':
+        if self.action == 'timer_settings':
             permission_classes = [permissions.IsAuthenticated, IsPremiumUser]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -63,8 +64,43 @@ class PomodoroViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(session)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['patch'])
-    def settings(self, request, pk=None):
+    @action(detail=True, methods=['post'])
+    def start(self, request, pk=None):
+        """Start the timer for the current phase."""
+        session = self.get_object()
+        session.start()
+        return Response(self.get_serializer(session).data)
+
+    @action(detail=True, methods=['post'])
+    def pause(self, request, pk=None):
+        """Pause the timer, freezing the remaining time."""
+        session = self.get_object()
+        session.pause()
+        return Response(self.get_serializer(session).data)
+
+    @action(detail=True, methods=['post'])
+    def resume(self, request, pk=None):
+        """Resume the timer from where it was paused."""
+        session = self.get_object()
+        session.resume()
+        return Response(self.get_serializer(session).data)
+
+    @action(detail=True, methods=['post'])
+    def reset(self, request, pk=None):
+        """Reset the current phase to initial state."""
+        session = self.get_object()
+        session.reset()
+        return Response(self.get_serializer(session).data)
+
+    @action(detail=True, methods=['post'])
+    def next_phase(self, request, pk=None):
+        """Move to the next phase (Work -> Break -> Work)."""
+        session = self.get_object()
+        session.next_phase()
+        return Response(self.get_serializer(session).data)
+
+    @action(detail=True, methods=['patch'], url_path='settings')
+    def timer_settings(self, request, pk=None):
         """Update Pomodoro settings for a session."""
         session = self.get_object()
         
@@ -76,11 +112,6 @@ class PomodoroViewSet(viewsets.ModelViewSet):
         
         if serializer.is_valid():
             serializer.save()
-            # Also update remaining_seconds if timer is idle
-            if session.state == 'idle':
-                session.remaining_seconds = session.work_duration
-                session.save()
-            
             return Response(PomodoroSessionSerializer(session).data)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
