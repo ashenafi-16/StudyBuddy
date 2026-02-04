@@ -21,7 +21,16 @@ const LoginPage: React.FC = () => {
             const result = await login(formData.email, formData.password);
             if (result.success) {
                 toast.success("Login successful!");
-                navigate("/dashboard");
+
+                // Get redirect path from query string
+                const params = new URLSearchParams(window.location.search);
+                const redirectTo = params.get('redirect');
+
+                if (redirectTo) {
+                    navigate(decodeURIComponent(redirectTo));
+                } else {
+                    navigate("/");
+                }
             } else {
                 toast.error(result.message || "Login failed");
                 setError(result.message || "Login failed");
@@ -114,14 +123,14 @@ const LoginPage: React.FC = () => {
                         </div>
 
                         {/* FORM ILLUSTRATION - RIGHT SIDE */}
-                            <div className="hidden md:flex md:w-1/2 h-full bg-gradient-to-bl from-slate-800/20 to-transparent">
+                        <div className="hidden md:flex md:w-1/2 h-full bg-gradient-to-bl from-slate-800/20 to-transparent">
 
-                                <img
+                            <img
                                 src="/login.png"
                                 alt="People using mobile devices"
                                 className="w-full h-full object-cover"
-                                />
-                              
+                            />
+
                         </div>
                     </div>
                 </BorderAnimatedContainer>

@@ -59,6 +59,12 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'drf_spectacular',
+    # New apps
+    'planner',
+    'resources',
+    'pomodoro',
+    'subscriptions',
+    'studytracker',
 ]
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
@@ -224,5 +230,10 @@ cloudinary.config(
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+CHAPA_SECRET_KEY = os.getenv('CHAPA_SECRET_KEY')
+CHAPA_WEBHOOK_SECRET = os.getenv('CHAPA_WEBHOOK_SECRET')
+CHAPA_PUBLIC_KEY = os.getenv('CHAPA_PUBLIC_KEY')
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
+CHAPA_MOCK_MODE = False  # True for fake payments

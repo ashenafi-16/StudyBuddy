@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from "../notifications/NotificationDropdown";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface NavbarProps {
   user_profile?: {
@@ -12,9 +13,10 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
   const navigate = useNavigate();
+  const { isPremium, user } = useAuth();
   const safeUserProfile = {
-    full_name: user_profile?.full_name || "",
-    profile_pic_url: user_profile?.profile_pic_url || undefined,
+    full_name: user?.full_name || user?.first_name || "",
+    profile_pic_url: user?.profile_pic_url || undefined,
   };
 
   const { full_name, profile_pic_url } = safeUserProfile;
@@ -25,9 +27,12 @@ const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
   };
 
   const handleProfileClick = () => {
-    navigate("/profile");
+    if (isPremium) {
+      navigate("/profile");
+    } else {
+      navigate("/subscription");
+    }
   }
-
   return (
     <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-700 px-6 py-4 shadow-sm">
       <div className="flex justify-between items-center">
@@ -53,7 +58,9 @@ const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
               <p className="font-semibold text-white text-sm">
                 {full_name || "Welcome Back!"}
               </p>
-              <p className="text-xs text-emerald-400">Online</p>
+              <p className="text-xs text-emerald-400">
+                {isPremium ? "Pro Member" : ""}
+              </p>
             </div>
 
             <div

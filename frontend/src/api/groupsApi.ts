@@ -125,16 +125,11 @@ export const updateGroupMember = async (
     return response.data;
 };
 
-/**
- * Remove a member from a group (admin/moderator only)
- */
+
 export const removeGroupMember = async (memberId: number): Promise<void> => {
     await api.delete(`/group-members/${memberId}/`);
 };
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
 
 /**
  * Check if user is admin or moderator of a group

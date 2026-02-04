@@ -4,8 +4,9 @@ import api from "../services/api";
 
 export interface User {
   id: number;
-  full_name: string;
+  full_name?: string;
   email: string;
+  profile_pic_url?: string;
 }
 
 export interface Message {
@@ -13,6 +14,10 @@ export interface Message {
   content: string;
   message_type: "text" | "file" | "image";
   file_attachment: string | null;
+  file_info?: {
+    name: string;
+    size: number;
+  };
   timestamp: string;
   sender: User;
   conversation_id?: number;
@@ -62,6 +67,7 @@ interface ChatStoreState {
   toggleSound: () => void;
   setActiveTab: (tab: string) => void;
   setSelectedUser: (user: Contact | null) => void;
+  sendTyping: () => void;
 
   getAllGroupContacts: () => Promise<void>;
   getAllIndividualContacts: () => Promise<void>;
@@ -241,7 +247,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   },
 
   sendMessage: async ({ text = "", file, currentUser }) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser } = get();
     if (!selectedUser) {
       toast.error("No conversation selected");
       return;

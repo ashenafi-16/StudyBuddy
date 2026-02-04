@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import Sidebar from '../components/common/Sidebar';
-import Navbar from '../components/common/Navbar';
 import GroupsList from '../components/groups/GroupsList';
 import NewGroupModal from '../components/NewGroupModel';
 
@@ -13,20 +11,12 @@ export default function Groups() {
     };
 
     return (
-        <div className="flex h-screen bg-[#0f172a] overflow-hidden">
-            <Sidebar />
-
-            <div className="flex-1 flex flex-col min-w-0">
-                <Navbar />
-
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
-                    <div className="max-w-7xl mx-auto">
-                        <GroupsList
-                            key={refreshKey}
-                            onCreateClick={() => setShowModal(true)}
-                        />
-                    </div>
-                </main>
+        <div className="p-4 sm:p-6 lg:p-10 min-h-full bg-[#0f172a] animate-in fade-in duration-500">
+            <div className="max-w-[1400px] mx-auto">
+                <GroupsList
+                    key={refreshKey}
+                    onCreateClick={() => setShowModal(true)}
+                />
             </div>
 
             {showModal && (

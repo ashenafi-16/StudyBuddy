@@ -9,6 +9,7 @@ import { authAPI } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import toast from "react-hot-toast";
 import { useChatStore } from "../store/useChatStore";
+import { fetchMySubscription, type UserSubscription } from "../api/subscriptionApi";
 
 interface User {
   id: number;
@@ -44,13 +45,15 @@ interface AuthContextType {
   logout: () => void;
   loadProfile: () => Promise<void>;
   isAuthenticated: boolean;
-
+  subscriptions: UserSubscription[];
+  isPremium: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const setUserFromToken = (token: string) => {
@@ -83,8 +86,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? { ...prev, ...profile }
           : { ...profile, token: localStorage.getItem("token") || "" }
       );
+
+      // Also load subscriptions
+      const subData = await fetchMySubscription();
+      if (subData.has_subscription) {
+        setSubscriptions(subData.subscriptions);
+      } else {
+        setSubscriptions([]);
+      }
     } catch (error) {
-      console.error("Failed to load profile:", error);
+      console.error("Failed to load profile or subscription:", error);
     }
   };
 
@@ -212,7 +223,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout,
     loadProfile,
     isAuthenticated: !!user,
-  
+    subscriptions,
+    isPremium: subscriptions.length > 0,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

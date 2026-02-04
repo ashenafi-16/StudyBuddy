@@ -1,22 +1,27 @@
 // import React from "react";
-import { Home, Calendar, Users, MessageSquare, TrendingUp, LogOut } from "lucide-react";
+import { Home, Calendar, Users, MessageSquare, FolderOpen, Timer, LogOut, Star } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, isPremium, subscriptions } = useAuth();
+  const primarySubscription = subscriptions[0];
 
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: Users, label: "Study Groups", path: "/groups" },
-    { icon: Calendar, label: "Study Sessions", path: "/sessions" },
-    { icon: MessageSquare, label: "Messages", path: "/chat" },
-    { icon: TrendingUp, label: "Progress", path: "/progress" },
+    { icon: Home, label: "Home", path: "/dashboard", premium: true },
+    { icon: Users, label: "Study Groups", path: "/groups", premium: true },
+    { icon: Calendar, label: "Study Planner", path: "/planner", premium: true },
+    { icon: FolderOpen, label: "Resources", path: "/resources", premium: true },
+    { icon: Timer, label: "Pomodoro Timer", path: "/pomodoro", premium: true },
+    { icon: MessageSquare, label: "Messages", path: "/chat", premium: true },
+    { icon: Star, label: "Subscription", path: "/subscription", premium: false },
   ];
+
+  const visibleNavItems = navItems.filter(item => !item.premium || isPremium);
 
   return (
     <aside className="w-64 h-full bg-[#1e293b] border-r border-slate-700 flex flex-col">
@@ -30,13 +35,20 @@ export default function Sidebar() {
             <h1 className="text-xl font-bold text-white tracking-tight">
               Study<span className="text-emerald-400">Buddy</span>
             </h1>
+            {isPremium && primarySubscription && (
+              <div className="mt-1">
+                <span className="text-[10px] font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 text-slate-900 px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
+                  {primarySubscription.plan.name.replace(' Plan', '')}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}

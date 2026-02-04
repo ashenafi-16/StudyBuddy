@@ -15,29 +15,29 @@ function ChatHeader() {
     ? selectedUser.members?.find((m: any) => m.id !== user?.id)
     : null;
 
-  const isOnline = 
+  const isOnline =
     !isGroup &&
     otherUser &&
     onlineUsers instanceof Set &&
     onlineUsers.has(otherUser?.id);
 
   // typing checks
-  const isTypingIndividual = 
-    !isGroup && 
-    !!otherUser && 
+  const isTypingIndividual =
+    !isGroup &&
+    !!otherUser &&
     typingUsers.has(otherUser.id);
-  
+
 
   const isTypingGroup =
     isGroup &&
     selectedUser.members?.some((m: any) =>
       typingUsers.has(m.id)
     );
-  
+
   const onlineCount = isGroup
     ? selectedUser.members?.filter((m: any) =>
-        onlineUsers.has(m.id)
-      ).length || 0
+      onlineUsers.has(m.id)
+    ).length || 0
     : 0;
   console.log("is typing; ", isTypingIndividual, otherUser, typingUsers)
 
@@ -52,10 +52,11 @@ function ChatHeader() {
   }, [setSelectedUser]);
 
   return (
-    <div className="flex justify-between items-center bg-slate-800/50 border-b border-slate-700/50 h-[84px] px-6">
-      <div className="flex items-center space-x-3">
-        <div className="relative">
-          <div className="w-12 h-12 rounded-full overflow-hidden">
+    <div className="flex justify-between items-center bg-[#0b0f1a] border-b border-white/5 h-20 px-8 sticky top-0 z-10 backdrop-blur-md bg-opacity-95">
+      <div className="flex items-center gap-4">
+        {/* Profile Image (Soft Premium Style) */}
+        <div className="relative group">
+          <div className="w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-white/5 group-hover:ring-indigo-500/50 transition-all duration-300">
             <img
               src={
                 isGroup
@@ -63,38 +64,55 @@ function ChatHeader() {
                   : otherUser?.profile_pic_url || "/avatar.png"
               }
               alt={isGroup ? selectedUser.group_name : otherUser?.full_name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           </div>
 
-          {/* ✅ Online dot */}
           {!isGroup && isOnline && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
+            <div className="absolute -bottom-1 -right-1">
+              <span className="block w-4 h-4 bg-emerald-500 rounded-full border-4 border-[#0b0f1a] shadow-lg shadow-emerald-500/20" />
+            </div>
           )}
         </div>
 
-        <div>
-          <h3 className="text-slate-200 font-medium">
+        <div className="flex flex-col">
+          <h3 className="text-white font-bold text-[16px] tracking-tight group-hover:text-indigo-400 transition-colors">
             {isGroup ? selectedUser.group_name : otherUser?.full_name}
           </h3>
-
-          {/* ✅ Status / Typing text */}
-          <p className="text-slate-400 text-sm">
-            {isTypingIndividual && "Typing..."}
-            {isTypingGroup && "Someone is typing..."}
-            {!isTypingIndividual && !isTypingGroup && (
-              isGroup
-                ? `${onlineCount} online / ${selectedUser.total_members || 0}`
-                : isOnline
-                ? "Online"
-                : "Offline"
+          <div className="flex items-center gap-2">
+            {/* Status Indicator */}
+            {(isTypingIndividual || isTypingGroup) ? (
+              <div className="flex items-center gap-2">
+                <span className="flex gap-1">
+                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" />
+                </span>
+                <p className="text-[13px] text-indigo-400 font-semibold animate-pulse">
+                  Typing...
+                </p>
+              </div>
+            ) : (
+              <p className={`text-[13px] font-medium transition-colors ${isOnline ? 'text-indigo-400/80' : 'text-slate-500'
+                }`}>
+                {isGroup
+                  ? `${onlineCount} Active • ${selectedUser.total_members || 0} Members`
+                  : isOnline ? "Online Now" : "Currently Offline"}
+              </p>
             )}
-          </p>
+          </div>
         </div>
       </div>
 
-      <button onClick={() => setSelectedUser(null)}>
-        <XIcon className="w-5 h-5 text-slate-400 hover:text-slate-200" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="p-2.5 rounded-xl bg-slate-800/20 text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all duration-200 border border-white/5"
+          title="Close Chat"
+        >
+          <XIcon size={20} />
+        </button>
+      </div>
     </div>
   );
 }

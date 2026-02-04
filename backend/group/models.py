@@ -14,7 +14,10 @@ class StudyGroup(models.Model):
         study_buddy = 'study_buddy', 'Study Buddy'
 
     group_name = models.CharField(max_length=110)
-    group_description = models.TextField()
+    group_description = models.TextField(
+        blank=True,
+        help_text="Optional description of the group"
+    )
     group_type = models.CharField(max_length=20, choices=GroupType.choices, default=GroupType.academic)
     created_by = models.ForeignKey(
         User,

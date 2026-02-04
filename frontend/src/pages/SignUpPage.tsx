@@ -23,9 +23,9 @@ const SignUpPage: React.FC = () => {
             const result = await register(formData.email, formData.password, "student", username);
             if (result.success) {
                 toast.success("Account created successfully!")
-                navigate("/dashboard");
+                navigate("/");
             } else {
-              toast.error(result.message || "Registration failed");
+                toast.error(result.message || "Registration failed");
                 setError(result.message || "Registration failed");
             }
         } catch (err) {
@@ -139,9 +139,9 @@ const SignUpPage: React.FC = () => {
                                 alt="People using mobile devices"
                                 className="w-full h-full object-cover"
                             />
-                            
+
                             {/* OVERLAY GRADIENTS ON ALL SIDES */}
-                            
+
                             {/* Left side gradient - blending with form */}
                             <div className="absolute left-0 top-0 bottom-0 w-32 z-10 
                                 bg-gradient-to-r from-slate-800 via-slate-900/40 to-transparent">
@@ -149,22 +149,22 @@ const SignUpPage: React.FC = () => {
                                 {/* <div className="absolute left-0 top-0 bottom-0 w-16
                                     bg-gradient-to-r from-slate-900 to-slate-900/0"></div> */}
                             </div>
-                            
+
                             {/* Right side gradient */}
                             <div className="absolute right-0 top-0 bottom-0 w-24 z-10 
                                 bg-gradient-to-l from-slate-600 via-slate-700/30 to-transparent">
                                 <div className="absolute right-0 top-0 bottom-0 w-12
                                     bg-gradient-to-l from-slate-900 to-slate-900/0"></div>
                             </div>
-                            
-                            
-                            
-                         
-                            
+
+
+
+
+
                             {/* Subtle overall vignette effect */}
                             <div className="absolute inset-0 z-5 
                                 bg-gradient-radial from-transparent via-transparent to-slate-900/20"></div>
-                            
+
                             {/* Optional: Cyan tint overlay to match theme */}
                             <div className="absolute inset-0 z-0 
                                 bg-gradient-to-br from-cyan-900/5 via-transparent to-slate-900/10 mix-blend-overlay"></div>

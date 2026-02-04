@@ -24,6 +24,8 @@ const MessageInput = () => {
 
     if (!text.trim() && !file) return;
 
+    if (!user) return;
+
     sendMessage({
       text: text.trim(),
       file,
@@ -70,41 +72,54 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-4 border-t border-slate-700/50">
+    <div className="p-6 bg-[#0b0f1a] border-t border-white/5">
       {imagePreview && (
-        <div className="max-w-3xl mx-auto mb-3 flex items-center">
-          <div className="relative">
+        <div className="max-w-4xl mx-auto mb-4 flex items-center animate-in slide-in-from-bottom-2 duration-300">
+          <div className="relative group">
             {imagePreview === "pdf" ? (
-              <div className="w-20 h-20 rounded-lg border border-slate-700 bg-slate-800 flex flex-col items-center justify-center">
-                <span className="text-xs text-slate-400">PDF</span>
+              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-indigo-500/30 bg-indigo-500/5 flex flex-col items-center justify-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-indigo-400">PDF</span>
+                </div>
               </div>
             ) : (
               <img
                 src={imagePreview}
-                className="w-20 h-20 rounded-lg border border-slate-700 object-cover"
+                className="w-20 h-20 rounded-2xl border-2 border-white/10 object-cover shadow-2xl"
               />
             )}
             <button
-              className="absolute -top-2 -right-2 bg-slate-800 text-slate-200 rounded-full w-6 h-6"
+              className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full w-6 h-6 flex items-center justify-center border border-white/10 shadow-lg hover:bg-indigo-500 transition-colors"
               onClick={() => {
                 setImagePreview(null);
                 setFile(null);
               }}
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon size={14} />
             </button>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-        <input
-          type="text"
-          value={text}
-          placeholder="Type your message..."
-          className="flex-1 bg-slate-800/50 rounded-lg py-2 px-4"
-          onChange={(e) => handleTyping(e.target.value)}
-        />
+      <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-3">
+        <div className="flex-1 relative group bg-white/5 rounded-2xl border border-white/5 focus-within:border-indigo-500/50 focus-within:bg-white/10 transition-all duration-300">
+          <input
+            type="text"
+            value={text}
+            placeholder="Type a message..."
+            className="w-full bg-transparent py-4 pl-6 pr-14 text-[15px] text-white placeholder-slate-500 outline-none"
+            onChange={(e) => handleTyping(e.target.value)}
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl text-slate-500 hover:text-indigo-400 hover:bg-white/5 transition-all duration-200"
+            title="Attach Media"
+          >
+            <ImageIcon size={20} />
+          </button>
+        </div>
 
         <input
           type="file"
@@ -115,20 +130,19 @@ const MessageInput = () => {
         />
 
         <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="bg-slate-800/50 px-4 rounded-lg"
-        >
-          <ImageIcon className="w-5 h-5" />
-        </button>
-
-        <button
           type="submit"
-          className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg"
+          disabled={!text.trim() && !file}
+          className={`flex items-center justify-center size-[52px] rounded-2xl shadow-lg transition-all duration-300 ${text.trim() || file
+            ? "bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95 shadow-indigo-500/20"
+            : "bg-slate-800 text-slate-600 cursor-not-allowed scale-95 opacity-50"
+            }`}
         >
-          <SendHorizonal className="w-5 h-5" />
+          <SendHorizonal size={22} />
         </button>
       </form>
+      <p className="max-w-4xl mx-auto text-[10px] text-slate-600 mt-2 ml-1 uppercase font-bold tracking-widest opacity-50">
+        Press <span className="text-slate-400">Enter</span> to send
+      </p>
     </div>
   );
 };

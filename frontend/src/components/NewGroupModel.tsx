@@ -96,8 +96,8 @@ export default function NewGroupModal({ onClose, onSuccess }: NewGroupModalProps
                   type="button"
                   onClick={() => setFormData({ ...formData, group_type: type.value as GroupType })}
                   className={`p-4 rounded-lg border-2 transition-all ${formData.group_type === type.value
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
                     }`}
                 >
                   <div className="text-2xl mb-1">{type.icon}</div>
@@ -150,8 +150,8 @@ export default function NewGroupModal({ onClose, onSuccess }: NewGroupModalProps
                 type="button"
                 onClick={() => setFormData({ ...formData, is_public: true })}
                 className={`p-4 rounded-lg border-2 transition-all ${formData.is_public
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-slate-700 bg-slate-800 hover:border-slate-600'
                   }`}
               >
                 <Globe className="mx-auto mb-2" size={24} />
@@ -162,8 +162,8 @@ export default function NewGroupModal({ onClose, onSuccess }: NewGroupModalProps
                 type="button"
                 onClick={() => setFormData({ ...formData, is_public: false })}
                 className={`p-4 rounded-lg border-2 transition-all ${!formData.is_public
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-slate-700 bg-slate-800 hover:border-slate-600'
                   }`}
               >
                 <Lock className="mx-auto mb-2" size={24} />
@@ -195,4 +195,3 @@ export default function NewGroupModal({ onClose, onSuccess }: NewGroupModalProps
     </div>
   );
 }
-

@@ -70,7 +70,6 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def join(self,request, pk=None):
         group = self.get_object()
-
         if not group.is_public:
             return Response(
                 {"error": "This group is private. You need an invitation to join."},
@@ -106,7 +105,7 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
         Notification.objects.create(
             user=request.user,
-            Notification_type='group',
+            notification_type='group',
             title=f"Joined {group.group_name}",
             message=f'You have successfully joined {group.group_name}',
             related_group=group

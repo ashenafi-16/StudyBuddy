@@ -30,7 +30,13 @@ urlpatterns = [
     path("api/notifications/", include("Notifications.urls")),
     path('api/', include('group.urls')),
     path('api/', include('Tasks.urls')),
+    # New feature routes
+    path('api/', include('planner.urls')),
+    path('api/', include('resources.urls')),
+    path('api/', include('pomodoro.urls')),
+    path('api/subscriptions/', include('subscriptions.urls')),
     path('api-auth/', include('rest_framework.urls')),
+    path('api/streak/', include('studytracker.urls')),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 

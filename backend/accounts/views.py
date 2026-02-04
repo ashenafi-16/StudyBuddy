@@ -6,6 +6,7 @@ from .serializers import RegisterSerializer, UserProfileSerializer
 from django.db.models import Q
 from .serializers import UserBasicSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 def get_token_for_user(user):
@@ -19,6 +20,7 @@ def get_token_for_user(user):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -96,6 +98,8 @@ class UserViewSet(viewsets.ModelViewSet):
     
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
     
     def post(self, request, *args, **kwargs):
         serilizer = self.get_serializer(data=request.data)

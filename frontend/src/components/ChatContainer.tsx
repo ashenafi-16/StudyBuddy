@@ -22,97 +22,109 @@ function ChatContainer() {
     if (selectedUser?.id) {
       getMessageByConvId(selectedUser.id);
     }
-  }, [selectedUser]);
-  return (
-    <>
-      <ChatHeader />
-      <div className="flex-1 px-6 overflow-y-auto py-8">
+  }, [selectedUser, getMessageByConvId]);
 
+  return (
+    <div className="flex-1 flex flex-col bg-[#0b0f1a] relative">
+      <ChatHeader />
+
+      <div className="flex-1 px-6 overflow-y-auto py-8 custom-scrollbar">
         {isMessagesLoading ? (
           <MessagesLoadingSkeleton />
-        ) : messages.length > 0 ? (
-          <div className="max-w-3xl mx-auto space-y-6">
+        ) : (!messages || messages.length === 0) ? (
+          <div className="flex-1 flex items-center justify-center h-full">
+            <NoChatHistoryPlaceholder />
+          </div>
+        ) : (
+          <div className="max-w-5xl mx-auto space-y-6">
             {messages.map((msg) => {
-             
               const isOwn = msg.sender?.id === user?.id;
 
               return (
                 <div
                   key={msg.id}
-                  className={`chat ${isOwn ? "chat-end" : "chat-start"}`}
+                  className={`flex flex-col ${isOwn ? "items-end" : "items-start"} w-full mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300`}
                 >
                   <div
-                    className={`chat-bubble relative ${isOwn
-                      ? "bg-cyan-600 text-white"
-                      : "bg-slate-800 text-slate-200"
+                    className={`relative min-w-[80px] max-w-[85%] md:max-w-[80%] p-4 rounded-2xl shadow-sm transition-all duration-300 ${isOwn
+                      ? "bg-indigo-600 text-white rounded-tr-none"
+                      : "bg-slate-800/80 backdrop-blur-sm text-slate-100 rounded-tl-none border border-white/5"
                       }`}
                   >
                     {msg.message_type === "image" && msg.file_attachment && (
-                      <img
-                        src={msg.file_attachment}
-                        alt="shared"
-                        className="rounded-lg h-48 object-cover"
-                      />
+                      <div className="mb-3 overflow-hidden rounded-xl border border-white/10 shadow-lg">
+                        <img
+                          src={msg.file_attachment}
+                          alt="shared"
+                          className="max-h-[500px] w-full object-cover cursor-pointer hover:opacity-90 transition-opacity duration-300"
+                        />
+                      </div>
                     )}
 
                     {msg.message_type === "file" && msg.file_attachment && (
-                      <div className="flex items-start gap-3 max-w-sm">
-                        {/* File Icon with Download Arrow */}
-                        <div className="flex-shrink-0 w-14 h-14 bg-cyan-600/20 rounded-full flex items-center justify-center relative">
-                          <svg className="w-7 h-7 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className={`flex items-center gap-4 p-3 rounded-xl mb-3 border ${isOwn ? 'bg-black/10 border-white/10' : 'bg-slate-900/50 border-white/5'
+                        }`}>
+                        <div className={`p-2.5 rounded-lg flex items-center justify-center ${isOwn ? 'bg-white/10 text-white' : 'bg-indigo-500/20 text-indigo-400'
+                          }`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
-                          {/* Download Arrow Overlay */}
-                          <div className="absolute bottom-0 right-0 bg-cyan-600 rounded-full w-5 h-5 flex items-center justify-center">
-                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                            </svg>
-                          </div>
                         </div>
 
-                        {/* File Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm mb-1">
-                            {msg.file_info?.name || msg.file_attachment.split('/').pop() || 'Document.pdf'}
+                          <p className="text-sm font-bold truncate leading-tight">
+                            {msg.file_info?.name || msg.file_attachment.split('/').pop() || 'Document'}
                           </p>
-                          <p className="text-xs text-slate-400 mb-2">
-                            {msg.file_info?.size ? `${(msg.file_info.size / 1024).toFixed(1)} KB` : 'PDF'}
-                          </p>
-                          <a
-                            href={msg.file_attachment}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download
-                            className="text-cyan-500 hover:text-cyan-400 text-sm font-medium uppercase tracking-wide"
-                          >
-                            Download
-                          </a>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className="text-[10px] opacity-70 font-mono font-bold uppercase tracking-wider">
+                              {msg.file_info?.size ? `${(msg.file_info.size / 1024).toFixed(1)} KB` : 'PDF'}
+                            </span>
+                            <a
+                              href={msg.file_attachment}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-[10px] font-black uppercase tracking-[0.1em] underline underline-offset-4 hover:opacity-80 transition-opacity ${isOwn ? 'text-white' : 'text-indigo-400'
+                                }`}
+                            >
+                              Open
+                            </a>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {msg.message_type === "text" && (
-                      <p className="mt-2">{msg.content}</p>
+                      <p className="text-[15px] leading-relaxed font-normal whitespace-pre-wrap">
+                        {msg.content}
+                      </p>
                     )}
 
-                    <p className="text-xs mt-1 opacity-75">
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                    <div className={`flex items-center gap-2 mt-2 transition-opacity ${isOwn ? 'justify-end text-white/50' : 'justify-start text-slate-500'
+                      }`}>
+                      <span className="text-[10px] font-semibold tracking-wide">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      {isOwn && (
+                        <div className="flex items-center">
+                          <svg className="w-3.5 h-3.5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <NoChatHistoryPlaceholder name={selectedUser?.full_name ?? "User"} />
         )}
       </div>
 
       <MessageInput />
-    </>
+    </div>
   );
 }
 

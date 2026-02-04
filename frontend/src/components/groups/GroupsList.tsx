@@ -4,6 +4,7 @@ import { fetchGroups, joinGroup } from '../../api/groupsApi';
 import type { StudyGroup } from '../../types/groups';
 import GroupCard from './GroupCard';
 import { Loading, ErrorMessage } from '../common/LoadingError';
+import toast from 'react-hot-toast';
 
 interface GroupsListProps {
     onCreateClick: () => void;
@@ -63,9 +64,10 @@ export default function GroupsList({ onCreateClick }: GroupsListProps) {
         try {
             setJoiningId(groupId);
             await joinGroup(groupId);
+            toast.success("Joined successfully");
             await loadGroups(); // Reload to update membership status
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to join group');
+            toast.error('Failed to join group');
         } finally {
             setJoiningId(null);
         }
@@ -75,65 +77,56 @@ export default function GroupsList({ onCreateClick }: GroupsListProps) {
     if (error) return <ErrorMessage error={error} />;
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Study Groups</h1>
-                    <p className="text-slate-400">Discover and join study groups</p>
+        <div className="space-y-10 animate-in fade-in duration-700">
+            {/* Header Section - Minimalist */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-bold text-white tracking-tight sm:text-4xl">
+                        Study Groups
+                    </h1>
+                    <p className="text-slate-500 text-base">
+                        Collaborative learning spaces for students.
+                    </p>
                 </div>
                 <button
                     onClick={onCreateClick}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-white text-slate-900 hover:bg-slate-200 transition-all rounded-lg font-bold text-sm shadow-sm"
                 >
-                    <Plus size={20} />
+                    <Plus size={18} strokeWidth={3} />
                     <span>Create Group</span>
                 </button>
             </div>
 
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-                {/* Search Bar */}
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+            {/* Filter and Search Bar - Sleek Minimalist */}
+            <div className="flex flex-col lg:flex-row items-stretch gap-4">
+                {/* Simplified Search */}
+                <div className="flex-1 relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-white transition-colors" size={18} />
                     <input
                         type="text"
                         placeholder="Search groups..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-[#1e293b] border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full pl-12 pr-4 py-3 bg-[#0f172a] border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-slate-600 transition-all text-sm font-medium"
                     />
                 </div>
 
-                {/* Filter Buttons */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setFilterType('all')}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all ${filterType === 'all'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-[#1e293b] text-slate-400 hover:bg-slate-700'
-                            }`}
-                    >
-                        All Groups
-                    </button>
-                    <button
-                        onClick={() => setFilterType('my')}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all ${filterType === 'my'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-[#1e293b] text-slate-400 hover:bg-slate-700'
-                            }`}
-                    >
-                        My Groups
-                    </button>
-                    <button
-                        onClick={() => setFilterType('public')}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all ${filterType === 'public'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-[#1e293b] text-slate-400 hover:bg-slate-700'
-                            }`}
-                    >
-                        Public
-                    </button>
+                {/* Segmented Control Filters */}
+                <div className="flex p-1.5 bg-[#0f172a] border border-slate-800 rounded-xl gap-1">
+                    {(['all', 'my', 'public'] as const).map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => setFilterType(type)}
+                            className={`px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${filterType === type
+                                    ? 'bg-slate-800 text-white border border-slate-700'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                }`}
+                        >
+                            {type === 'all' && 'All'}
+                            {type === 'my' && 'My'}
+                            {type === 'public' && 'Public'}
+                        </button>
+                    ))}
                 </div>
             </div>
 
