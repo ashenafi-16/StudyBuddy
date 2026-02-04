@@ -99,12 +99,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'studybuddy.wsgi.application'
 ASGI_APPLICATION = 'studybuddy.asgi.application'
 
-# Channel layers configuration
-
-# For development without Redis 
+# Channel layers configuration - using Redis for production-ready WebSocket support
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
+# Redis Cache configuration for real-time features (Messages, Pomodoro)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
 # Database

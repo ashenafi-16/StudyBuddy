@@ -1,5 +1,5 @@
 // src/components/notifications/NotificationDropdown.tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Bell } from "lucide-react";
 import axios from "axios";
 import NotificationItem from "./NotificationItem";
@@ -14,6 +14,7 @@ interface Notification {
 }
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
+const WS_BASE_URL = "ws://127.0.0.1:8000";
 
 export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -21,6 +22,8 @@ export default function NotificationDropdown() {
   const [loading, setLoading] = useState(false);
   const [marking, setMarking] = useState(false); // prevents duplicate mark-read runs
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
 
   const token = localStorage.getItem("token"); // or get from context
 
@@ -104,6 +107,65 @@ export default function NotificationDropdown() {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  // WebSocket connection for real-time notifications
+  const connectWebSocket = useCallback(() => {
+    if (!token) return;
+
+    const wsUrl = `${WS_BASE_URL}/ws/notifications/?token=${token}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Notification WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'initial_load') {
+          // Server sends unread notifications on connect
+          setNotifications(prev => {
+            const existingIds = new Set(prev.map(n => n.id));
+            const newNotifications = data.notifications.filter(
+              (n: Notification) => !existingIds.has(n.id)
+            );
+            return [...newNotifications, ...prev];
+          });
+        } else if (data.type === 'new_notification') {
+          // Real-time notification from Pomodoro lifecycle
+          const notification = data.notification;
+          setNotifications(prev => [notification, ...prev]);
+        }
+      } catch (err) {
+        console.error('Failed to parse notification message', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('Notification WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('Notification WebSocket closed, reconnecting in 5s...');
+      reconnectTimeoutRef.current = window.setTimeout(connectWebSocket, 5000);
+    };
+
+    wsRef.current = ws;
+  }, [token]);
+
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [connectWebSocket]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 

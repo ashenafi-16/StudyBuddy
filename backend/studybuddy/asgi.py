@@ -9,13 +9,15 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import Message.routing
 import pomodoro.routing
+import Notifications.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter(
             Message.routing.websocket_urlpatterns +
-            pomodoro.routing.websocket_urlpatterns
+            pomodoro.routing.websocket_urlpatterns +
+            Notifications.routing.websocket_urlpatterns
         )
     ),
 })

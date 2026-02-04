@@ -4,10 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import RegisterSerializer, UserProfileSerializer
 from django.db.models import Q
-from .serializers import UserBasicSerializer, LoginSerializer
+from .serializers import UserBasicSerializer, LoginSerializer, PasswordChangeSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from rest_framework.views import APIView
+from django.contrib.auth import update_session_auth_hash
 
 def get_token_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -111,5 +112,24 @@ class LoginView(generics.GenericAPIView):
             "user": UserProfileSerializer(user).data,
             "tokens": tokens
         })
+    
+class PasswordChangeView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PasswordChangeSerializer
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        
+        return Response({'message': "password updated successfully."}, 
+                        status=status.HTTP_200_OK)
+
+        
+        
+
 
         

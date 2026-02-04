@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from "../notifications/NotificationDropdown";
 import { useAuth } from "../../contexts/AuthContext";
+import ActiveTimerIndicator from './ActiveTimerIndicator';
 
 interface NavbarProps {
   user_profile?: {
@@ -36,11 +37,14 @@ const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
   return (
     <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-700 px-6 py-4 shadow-sm">
       <div className="flex justify-between items-center">
-        {/* Logo/Brand - Hidden on mobile if sidebar is present, but good to have */}
-        <div className="flex items-center">
+        {/* Logo/Brand + Active Timer */}
+        <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-white tracking-tight">
             Study<span className="text-emerald-400">Buddy</span>
           </h1>
+
+          {/* Active Timer Indicator - Shows when a Pomodoro timer is running */}
+          <ActiveTimerIndicator />
         </div>
 
         {/* Right Section */}
@@ -48,8 +52,6 @@ const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
           {/* Notifications */}
           <div className="relative">
             <NotificationDropdown />
-            {/* Badge is handled inside NotificationDropdown usually, but if here: */}
-            {/* <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1e293b]"></div> */}
           </div>
 
           {/* User Profile */}

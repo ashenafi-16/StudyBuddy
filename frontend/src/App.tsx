@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { PomodoroProvider } from "./contexts/PomodoroContext";
+import { NotificationProvider } from "./components/common/PopupNotification";
 
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -113,10 +115,14 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-right" reverseOrder={false} />
-      <Router>
-        <AppRoutes />
-      </Router>
+      <PomodoroProvider>
+        <NotificationProvider>
+          <Toaster position="top-right" reverseOrder={false} />
+          <Router>
+            <AppRoutes />
+          </Router>
+        </NotificationProvider>
+      </PomodoroProvider>
     </AuthProvider>
   );
 }

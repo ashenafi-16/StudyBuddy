@@ -8,6 +8,8 @@ User = get_user_model()
 class PomodoroSessionSerializer(serializers.ModelSerializer):
     """Serializer for PomodoroSession."""
     remaining_seconds = serializers.SerializerMethodField()
+    is_leader = serializers.SerializerMethodField()
+    is_creator = serializers.SerializerMethodField()
     group_name = serializers.CharField(source='group.group_name', read_only=True)
     started_by_username = serializers.CharField(source='started_by.username', read_only=True)
 
@@ -21,6 +23,8 @@ class PomodoroSessionSerializer(serializers.ModelSerializer):
             'phase_start', 'phase_duration',
             'paused_at', 'remaining_seconds_at_pause',
             'remaining_seconds', # Calculated field
+            'allow_member_pause', 'is_leader', 'is_creator',
+            'sync_mode',
             'current_session_number',
             'started_by', 'started_by_username',
             'created_at', 'updated_at'
@@ -51,6 +55,19 @@ class PomodoroSessionSerializer(serializers.ModelSerializer):
             
         return 0
 
+    def get_is_leader(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.can_control(request.user, 'start')
+
+    def get_is_creator(self, obj):
+        """Return True only if the requesting user is the group's original creator."""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.group.created_by == request.user
+
 
 class PomodoroSettingsSerializer(serializers.ModelSerializer):
     """Serializer for updating Pomodoro settings."""
@@ -59,7 +76,8 @@ class PomodoroSettingsSerializer(serializers.ModelSerializer):
         model = PomodoroSession
         fields = [
             'work_duration', 'break_duration', 
-            'long_break_duration', 'sessions_before_long_break'
+            'long_break_duration', 'sessions_before_long_break',
+            'allow_member_pause', 'sync_mode'
         ]
 
     def validate_work_duration(self, value):
@@ -75,3 +93,63 @@ class PomodoroSettingsSerializer(serializers.ModelSerializer):
                 "Break duration must be between 1 minute and 30 minutes."
             )
         return value
+
+
+class UserPomodoroSessionSerializer(serializers.ModelSerializer):
+    """Serializer for user's personal Pomodoro timer in FLEXIBLE mode."""
+    remaining_seconds = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username', read_only=True)
+    group_name = serializers.CharField(source='group.group_name', read_only=True)
+    work_duration = serializers.SerializerMethodField()
+    break_duration = serializers.SerializerMethodField()
+    long_break_duration = serializers.SerializerMethodField()
+    sessions_before_long_break = serializers.SerializerMethodField()
+    
+    class Meta:
+        from .models import UserPomodoroSession
+        model = UserPomodoroSession
+        fields = [
+            'id', 'user', 'username', 'group', 'group_name',
+            'phase', 'state',
+            'phase_start', 'phase_duration',
+            'paused_at', 'remaining_seconds_at_pause',
+            'remaining_seconds',
+            'current_session_number',
+            'work_duration', 'break_duration', 
+            'long_break_duration', 'sessions_before_long_break',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+    
+    def get_remaining_seconds(self, obj):
+        from django.utils import timezone
+        from .models import PomodoroSession
+        
+        settings = obj.get_settings()
+        
+        if obj.state == PomodoroSession.TimerState.IDLE:
+            return settings['work_duration']
+            
+        if obj.state == PomodoroSession.TimerState.PAUSED:
+            return obj.remaining_seconds_at_pause or 0
+        
+        if obj.state == PomodoroSession.TimerState.RUNNING and obj.phase_start:
+            now = timezone.now()
+            elapsed = (now - obj.phase_start).total_seconds()
+            remaining = obj.phase_duration - elapsed
+            return max(0, int(remaining))
+            
+        return 0
+    
+    def get_work_duration(self, obj):
+        return obj.get_settings()['work_duration']
+    
+    def get_break_duration(self, obj):
+        return obj.get_settings()['break_duration']
+    
+    def get_long_break_duration(self, obj):
+        return obj.get_settings()['long_break_duration']
+    
+    def get_sessions_before_long_break(self, obj):
+        return obj.get_settings()['sessions_before_long_break']
+

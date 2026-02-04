@@ -11,15 +11,32 @@ export interface PomodoroSession {
     break_duration: number;
     long_break_duration: number;
     sessions_before_long_break: number;
-    remaining_seconds: number;
-    formatted_time: string;
-    state: 'idle' | 'running' | 'paused' | 'break' | 'completed';
+
+    // The Moment
+    phase: 'work' | 'short_break' | 'long_break';
+    state: 'idle' | 'running' | 'paused' | 'completed';
+    phase_start: string | null;     // ISO Date string
+    phase_duration: number;         // Seconds
+
+    // Pause state
+    paused_at: string | null;
+    remaining_seconds_at_pause: number | null;
+
+    remaining_seconds: number;      // Server calculated snapshot
+    allow_member_pause: boolean;
+    is_leader: boolean;
+    is_creator: boolean;
+    sync_mode: 'forced' | 'flexible';
+
     current_session_number: number;
     started_by: number | null;
     started_by_username: string | null;
-    started_at: string | null;
     created_at: string;
     updated_at: string;
+
+    // FLEXIBLE mode fields
+    is_personal_timer?: boolean;
+    current_user_name?: string;
 }
 
 export interface PomodoroSettings {
@@ -27,16 +44,8 @@ export interface PomodoroSettings {
     break_duration: number;
     long_break_duration: number;
     sessions_before_long_break: number;
-}
-
-export interface TimerState {
-    remaining_seconds: number;
-    formatted_time: string;
-    state: 'idle' | 'running' | 'paused' | 'break' | 'completed';
-    current_session: number;
-    work_duration: number;
-    break_duration: number;
-    started_by: string | null;
+    allow_member_pause?: boolean;
+    sync_mode?: 'forced' | 'flexible';
 }
 
 const getAuthHeader = () => {
@@ -49,6 +58,32 @@ export const fetchPomodoroByGroup = async (groupId: number): Promise<PomodoroSes
         headers: getAuthHeader(),
         params: { group_id: groupId }
     });
+    return response.data;
+};
+
+// Actions
+export const startTimer = async (sessionId: number): Promise<PomodoroSession> => {
+    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/start/`, {}, { headers: getAuthHeader() });
+    return response.data;
+};
+
+export const pauseTimer = async (sessionId: number): Promise<PomodoroSession> => {
+    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/pause/`, {}, { headers: getAuthHeader() });
+    return response.data;
+};
+
+export const resumeTimer = async (sessionId: number): Promise<PomodoroSession> => {
+    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/resume/`, {}, { headers: getAuthHeader() });
+    return response.data;
+};
+
+export const resetTimer = async (sessionId: number): Promise<PomodoroSession> => {
+    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/reset/`, {}, { headers: getAuthHeader() });
+    return response.data;
+};
+
+export const nextPhase = async (sessionId: number): Promise<PomodoroSession> => {
+    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/next_phase/`, {}, { headers: getAuthHeader() });
     return response.data;
 };
 
@@ -66,7 +101,11 @@ export const updatePomodoroSettings = async (
 
 // WebSocket connection helper
 export const createPomodoroWebSocket = (groupId: number): WebSocket => {
-    return new WebSocket(`${WS_BASE}/ws/pomodoro/${groupId}/`);
+    const token = localStorage.getItem('token');
+    const wsUrl = token
+        ? `${WS_BASE}/ws/pomodoro/${groupId}/?token=${token}`
+        : `${WS_BASE}/ws/pomodoro/${groupId}/`;
+    return new WebSocket(wsUrl);
 };
 
 // Format seconds to MM:SS
@@ -74,10 +113,4 @@ export const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
-
-// Parse MM:SS to seconds
-export const parseTime = (timeString: string): number => {
-    const [mins, secs] = timeString.split(':').map(Number);
-    return mins * 60 + secs;
 };

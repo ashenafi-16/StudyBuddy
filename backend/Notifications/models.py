@@ -6,14 +6,20 @@ User = get_user_model()
 
 class Notification(models.Model):
     class NotificationTypes(models.TextChoices):
-        message = 'message', 'New Message'
-        task = 'task', 'Task Assignment'
-        group = 'group', 'Group Update'
-        system = 'system', 'System Notification'
+        MESSAGE = 'message', 'New Message'
+        TASK = 'task', 'Task Assignment'
+        GROUP = 'group', 'Group Update'
+        SYSTEM = 'system', 'System Notification'
+        # Pomodoro lifecycle notifications
+        POMODORO_START = 'pomodoro_start', 'Pomodoro Started'
+        FOCUS_END = 'focus_end', 'Focus Session Ended'
+        BREAK_START = 'break_start', 'Break Started'
+        BREAK_END = 'break_end', 'Break Ended'
+        CYCLE_COMPLETE = 'cycle_complete', 'Pomodoro Cycle Complete'
     
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    notification_type = models.CharField(max_length=10, choices=NotificationTypes.choices)
+    notification_type = models.CharField(max_length=20, choices=NotificationTypes.choices)
     title = models.CharField(max_length=200)
     message = models.TextField()
     related_group = models.ForeignKey(
