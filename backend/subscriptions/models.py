@@ -4,7 +4,6 @@ from django.utils import timezone
 
 
 class SubscriptionPlan(models.Model):
-    # Available subscription plans 
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
@@ -25,7 +24,6 @@ class SubscriptionPlan(models.Model):
 
 
 class UserSubscription(models.Model):
-    # User's active subscription
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('active', 'Active'),

@@ -18,6 +18,10 @@ import PageLoader from "./components/common/PageLoader";
 import MainLayout from "./components/common/MainLayout";
 import { Toaster } from "react-hot-toast";
 import ChatPage from "./pages/ChatPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 // import SubscriptionPage from "./pages/SubscriptionPage"; // Moved down
 
 
@@ -80,6 +84,9 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/login" element={<LoginRedirect />} />
       <Route path="/signup" element={<SignupRedirect />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/password-reset-confirm" element={<ResetPasswordPage />} />
+      <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
       {/* Authenticated but Subscription-Required Routes */}
       <Route element={
@@ -89,6 +96,7 @@ function AppRoutes() {
       }>
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/subscription/verify" element={<SubscriptionPage />} />
+        <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 
       {/* Premium Only Routes */}

@@ -59,6 +59,11 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'drf_spectacular',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     # New apps
     'planner',
     'resources',
@@ -66,7 +71,30 @@ INSTALLED_APPS = [
     'subscriptions',
     'studytracker',
 ]
+SITE_ID = 1
 AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_SECRET')
+        },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True
+    }
+}
+
+# Redirects
+# Redirects
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+LOGIN_REDIRECT_URL = '/api/auth/google/callback/' # Redirect to backend view to generate tokens
+LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/login'     # Redirect to frontend login after logout
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -77,6 +105,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'studybuddy.urls'
@@ -221,14 +250,19 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_FROM = os.getenv('EMAIL_FROM')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+# EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
 CLIENT_URL = "ashenafi"
 EMAIL_FROM_NAME = os.getenv('EMAIL_FROM_NAME', 'StudyBuddy Team')
 
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 CLOUDINARY_STORAGE = {
@@ -255,3 +289,16 @@ CHAPA_MOCK_MODE = False  # True for fake payments
 
 # for development 
 CELERY_TASK_ALWAYS_EAGER = True
+
+
+
+# o use the built-in JSONB field to store the extracted extra_data.
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+
+SOCIAL_AUTH_REQUIRE_POST = True
+# CELERY_TASK_EAGER_PROPAGATES = True  # Add this to see task errors in the console
+
+# Bypass intermediate page for Google Login
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+

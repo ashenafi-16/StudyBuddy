@@ -23,13 +23,11 @@ def send_password_reset_email_task(email_address,uid, token):
     subject = "Reset Your StudyBuddy Password"
 
     reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
-
     context = {
         'reset_url': reset_url,
         'user_email': email_address
     }
     html_content = render_to_string('emails/password_reset.html', context)
-
     text_content = f"""
     Hello,
     

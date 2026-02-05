@@ -1,0 +1,56 @@
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy - Login</title>
+    <style>
+        .login-container { text-align: center; margin-top: 50px; font-family: sans-serif; max-width: 400px; margin-left: auto; margin-right: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .google-btn {
+            background-color: #4285F4;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .google-btn:hover { background-color: #357ae8; }
+        .error-msg { color: #d9534f; background: #f9f2f4; padding: 10px; border-radius: 4px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Welcome to StudyBuddy</h2>
+    <p>Please log in to continue your studies.</p>
+
+    {% get_providers as socialaccount_providers %}
+
+    {% if socialaccount_providers %}
+        <a href="{% provider_login_url 'google' %}" class="google-btn">
+            Login with Google
+        </a>
+    {% else %}
+        <div class="error-msg">
+            <strong>Configuration Error:</strong><br>
+            Go to Django Admin > Social Applications and add 'Google'. 
+            Make sure to add your site to 'Chosen Sites'.
+        </div>
+    {% endif %}
+
+    <hr>
+    <p>Or use a standard account</p>
+    
+    <form method="post" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" style="width: 100%; padding: 10px;">Sign In</button>
+    </form>
+</div>
+
+</body>
+</html>

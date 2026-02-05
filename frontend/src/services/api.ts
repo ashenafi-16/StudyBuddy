@@ -56,22 +56,49 @@ export const authAPI = {
   getProfile: async () => {
     const res = await api.get('/auth/users/profile/');
     return res.data;
-  }, 
+  },
   updateProfile: async (data: any) => {
     const isFormData = data instanceof FormData;
-    
+
     const method = isFormData ? "patch" : "put";
 
     const res = await api[method]("/auth/users/update_profile/", data, {
       headers: {
         ...(isFormData
-          ? {"Content-Type": "multipart/form-data"}
+          ? { "Content-Type": "multipart/form-data" }
           : {}),
       },
     });
     return res.data
-  }
-    
+  },
+
+  // Password Reset - Request reset link via email
+  requestPasswordReset: async (email: string) => {
+    const res = await api.post("/auth/password-reset/", { email });
+    return res.data;
+  },
+
+  // Password Reset - Confirm with token from email
+  confirmPasswordReset: async (uid: string, token: string, new_password: string, confirm_password: string) => {
+    // Note: This endpoint is at root level, not under /api
+    const res = await axios.post("http://127.0.0.1:8000/password-reset-confirm/", {
+      uid,
+      token,
+      new_password,
+      confirm_password,
+    });
+    return res.data;
+  },
+
+  // Password Change - For authenticated users
+  changePassword: async (old_password: string, new_password: string, confirm_password: string) => {
+    const res = await api.put("/auth/password-change/", {
+      old_password,
+      new_password,
+      confirm_password,
+    });
+    return res.data;
+  },
 };
 
 
