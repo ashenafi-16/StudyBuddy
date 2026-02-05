@@ -165,7 +165,9 @@ export default function SubscriptionPage() {
                                                 <div className="mt-1 w-5 h-5 rounded-full bg-emerald-400/20 flex items-center justify-center flex-shrink-0">
                                                     <Check size={12} className="text-emerald-400" strokeWidth={3} />
                                                 </div>
-                                                <span className="text-sm text-slate-300">{feature}</span>
+                                                <span className="text-sm text-slate-300">
+                                                    {typeof feature === 'string' ? feature : JSON.stringify(feature)}
+                                                </span>
                                             </li>
                                         ))}
                                     </ul>

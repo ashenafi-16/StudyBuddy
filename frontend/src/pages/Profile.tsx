@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Loading, ErrorMessage } from "../components/common/LoadingError";
 import {
-  Briefcase, Camera, Edit2, Save, X,
+  Briefcase, Camera, Edit2, Save, X, Lock,
   Shield, Users, BookOpen, Clock, Award, Flame, Calendar, TrendingUp,
   Mail, CheckCircle, Sparkles
 } from "lucide-react";
@@ -347,12 +347,20 @@ export default function Profile() {
               {/* Edit Button */}
               <div className="sm:ml-auto flex gap-2">
                 {!isEditing ? (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all"
-                  >
-                    <Edit2 size={16} /> Edit Profile
-                  </button>
+                  <div className="flex gap-2">
+                    <Link
+                      to="/change-password"
+                      className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all"
+                    >
+                      <Lock size={16} /> Change Password
+                    </Link>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all"
+                    >
+                      <Edit2 size={16} /> Edit Profile
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <button

@@ -23,14 +23,14 @@ from .chapa_service import chapa_service
 
 
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
-    # ViewSet for listing subscription plans
+    # Listing subscription plan
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class SubscriptionViewSet(viewsets.ViewSet):
-    # ViewSet for subscription management
+    # subscription management
     permission_classes = [permissions.IsAuthenticated]
     
     @action(detail=False, methods=['get'])
