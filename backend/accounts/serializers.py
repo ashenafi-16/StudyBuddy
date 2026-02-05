@@ -4,6 +4,9 @@ from django.contrib.auth import authenticate, get_user_model
 from .tasks import send_welcome_email_task
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
 User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -81,4 +84,31 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError('Old password is incorrect.')
         return value
 
+    
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(validators=[validate_password], write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
 
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        
+        try: 
+            uid = force_str(urlsafe_base64_decode(attrs['uid']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist): 
+            raise serializers.ValidationError({'token': "Invalid user ID."})
+        
+        if not default_token_generator.check_token(user, attrs['token']):
+            raise serializers.ValidationError({'token': 'Invalid or expired token.'})
+        
+        attrs['user'] = user
+        return attrs
+    
+    def save(self):
+        user = self.validated_data['user']
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
