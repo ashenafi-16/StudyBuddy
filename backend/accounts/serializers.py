@@ -42,7 +42,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'profile_pic','profile_pic_url', 'bio', 'full_name', 'groups_joined', 'role']
+        fields = ['id', 'email', 'username', 'first_name', 'last_name', 'profile_pic','profile_pic_url', 'bio', 'full_name', 'groups_joined', 'role']
     def get_groups_joined(self, obj):
         return obj.group_memberships.filter(is_active=True).count()
     
@@ -66,7 +66,7 @@ class UserBasicSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'full_name', 'profile_pic', 'profile_pic_url', 'role')
+        fields = ('id', 'email', 'username', 'full_name', 'profile_pic', 'profile_pic_url', 'role')
 
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)

@@ -66,55 +66,106 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
                 conversation=conversation,
                 user = self.request.user
             )
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = request.user
+
+        # security: if group is private and user isn't a member, restrict access
+        if not instance.is_public and not instance.members.filter(user=user, is_active=True).exists():
+            raise PermissionDenied("You are not a member of this private group.")
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], url_path='join-via-link/(?P<token>[^/.]+)')
+    def join_via_link(self, request, pk=None, token=None):
+        # Construct the request data format for the unified join method
+        request._full_data = {'group_id': pk, 'invitation_token': token}
+        return self.join(request)
+
+
 
     @action(detail=True, methods=['post'])
     def join(self,request, pk=None):
-        group = self.get_object()
-        if not group.is_public:
+        group_id = request.data.get('group_id')
+
+        if not group_id:
             return Response(
-                {"error": "This group is private. You need an invitation to join."},
-                status = status.HTTP_403_FORBIDDEN
+                {'error': "group_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = StudyGroup.objects.get(id=group_id)
+        except StudyGroup.DoesNotExist:
+            return Response(
+                {"error": "Group not found."}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
-        
-        member, created = GroupMember.objects.get_or_create(
-            user= request.user,
-            group = group, 
-            defaults={'role': 'member'}
-        )
-        if not created and member.is_active:
+        existing_member = GroupMember.objects.filter(
+            user=request.user,
+            group=group,
+            is_active=True
+        ).first()
+
+        if existing_member: 
             return Response(
                 {"error": "You are already a member of this group."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        elif not created and not member.is_active:
-            member.is_active=True
-            member.role="member"
-            member.save()
-        
-        # Ensure conversation exists
+        # check for invitation token(for private groups)
+        invitation_token = request.data.get('invitation_token')
+
+        if not group.is_public:
+            # private group requires ivitation token
+            if not invitation_token:
+                return Response(
+                    {"error": "This group is private. An invitation token is required to join."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            # validate invitation token
+            if str(group.invitation_token) != str(invitation_token):
+                return Response(
+                    {"error": "Invalid invitation token."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        # Handle previosly inactive membership (user rejoining)
+        inactive_member = GroupMember.objects.filter(
+            user=request.user,
+            group=group,
+            is_active=False
+        ).first()
+
+        if inactive_member:
+            inactive_member.is_active = True
+            inactive_member.role = 'member'
+            inactive_member.save()
+            member = inactive_member
+        else:
+            # create new membership
+            member = GroupMember.objects.create(
+                user=request.user,
+                group=group,
+                role='member'
+            )
+        # Ensure conversation exists and user is added
         conversation, _ = Conversation.objects.get_or_create(
             group=group,
-            defaults={'type':'group'}
+            defaults={'type': 'group'}
         )
-
-        # Ensure use is in coversation members
         ConversationMember.objects.get_or_create(
             conversation=conversation,
             user=request.user
         )
 
+        # send notification
         Notification.objects.create(
-            user=request.user,
-            notification_type='group',
+            user =request.user,
+            notification_type='group', 
             title=f"Joined {group.group_name}",
-            message=f'You have successfully joined {group.group_name}',
+            message=f"You have successfully joined {group.group_name}", 
             related_group=group
         )
-
-     
         serilizer = GroupMemberSerializer(member)
         return Response(serilizer.data, status=status.HTTP_201_CREATED)
-    
+
+
     @action(detail=False, methods=['get'])
     def search(self, request):
         query = request.query_params.get('q', "")
@@ -173,19 +224,33 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
         group = self.get_object()
 
         total_members = group.members.filter(is_active=True).count()
-        total_messages = group.messages.count()
+        
+        # Messages are stored in the conversation model
+        try:
+            total_messages = group.conversation.messages.count() if hasattr(group, 'conversation') and group.conversation else 0
+        except:
+            total_messages = 0
+            
         total_tasks = group.tasks.count()
         completed_tasks = group.tasks.filter(status='completed').count()
         
         week_ago = timezone_now() - timedelta(days=7)
-        active_members = GroupMember.objects.filter(
-            group=group,
-            is_active=True,
-            user__sent_messages__group=group,
-            user__sent_messages__timestamp__gte=week_ago
-        ).distinct().count()
+        
+        # Count active members who have sent messages this week
+        try:
+            if hasattr(group, 'conversation') and group.conversation:
+                active_members = GroupMember.objects.filter(
+                    group=group,
+                    is_active=True,
+                    user__sent_messages__conversation=group.conversation,
+                    user__sent_messages__timestamp__gte=week_ago
+                ).distinct().count()
+            else:
+                active_members = 0
+        except:
+            active_members = 0
 
-        anaylics_data = {
+        analytics_data = {
             'group_id': group.id,
             'group_name': group.group_name,
             'total_members': total_members,
@@ -193,10 +258,10 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
             'total_asks': total_tasks,
             'completed_tasks': completed_tasks,
             'active_members_this_week': active_members,
-            'completion_rate': round((completed_tasks/total_tasks * 100) if total_tasks > 0 else 0,2)
+            'completion_rate': round((completed_tasks/total_tasks * 100) if total_tasks > 0 else 0, 2)
         }
 
-        return Response(anaylics_data)
+        return Response(analytics_data)
         
 class GroupMemberViewSet(viewsets.ModelViewSet):
     queryset = GroupMember.objects.filter(is_active=True)
@@ -239,3 +304,33 @@ class GroupMemberViewSet(viewsets.ModelViewSet):
 
         # Pass group to serializer
         serializer.save(group=group)
+
+    def destroy(self, request, *args, **kwargs):
+        """Remove a member from the group. Only admins/moderators can do this."""
+        member_to_remove = self.get_object()
+        group = member_to_remove.group
+
+        # Check if requesting user has permission (admin or moderator)
+        requester_membership = GroupMember.objects.filter(
+            user=request.user,
+            group=group,
+            role__in=['admin', 'moderator'],
+            is_active=True
+        ).first()
+
+        if not requester_membership:
+            raise PermissionDenied("You don't have permission to remove members from this group.")
+
+        # Cannot remove the group creator
+        if member_to_remove.user == group.created_by:
+            raise PermissionDenied("Cannot remove the group creator.")
+
+        # Cannot remove yourself (use leave endpoint instead)
+        if member_to_remove.user == request.user:
+            raise PermissionDenied("Use the leave endpoint to leave the group.")
+
+        # Soft delete by setting is_active to False
+        member_to_remove.is_active = False
+        member_to_remove.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

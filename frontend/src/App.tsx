@@ -22,6 +22,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+import GroupJoinPage from "./pages/GroupJoinPage";
 // import SubscriptionPage from "./pages/SubscriptionPage"; // Moved down
 
 
@@ -110,6 +111,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/groups/:id" element={<GroupDetailPage />} />
+        <Route path="/groups/join/:groupId/:token" element={<GroupJoinPage />} />
         <Route path="/groups/:id/analytics" element={<GroupAnalyticsPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/planner" element={<StudyPlannerPage />} />

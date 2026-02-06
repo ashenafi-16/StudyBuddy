@@ -160,7 +160,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['post', 'get'])
     def verify(self, request):
-        """Verify payment and activate subscription"""
+        # Verify payment and activate subscription
         tx_ref = request.data.get('tx_ref') or request.query_params.get('tx_ref')
         
         if not tx_ref:

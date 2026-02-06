@@ -97,11 +97,16 @@ class UserViewSet(viewsets.ModelViewSet):
         query = request.query_params.get('q', "")
         if not query:
             return Response([])
-        users = CustomUser.objects.filter(
-            Q(first_name__icontains=query) | 
-            Q(last_name__icontains=query) | 
-            Q(email__icontains=query)
-        )[:10]
+        if query.startswith('@'):
+            query = query[1:] # Remove @ for username search
+            users = CustomUser.objects.filter(username__icontains=query)[:10]
+        else:
+            users = CustomUser.objects.filter(
+                Q(first_name__icontains=query) | 
+                Q(last_name__icontains=query) | 
+                Q(email__icontains=query) |
+                Q(username__icontains=query)
+            )[:10]
         serializer = UserBasicSerializer(users, many=True)
         return Response(serializer.data)
     

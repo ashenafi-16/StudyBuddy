@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from cloudinary.models import CloudinaryField
-
+import uuid
+from django.conf import settings
 User = get_user_model()
+
 
 
 
@@ -29,7 +31,8 @@ class StudyGroup(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     profile_pic = CloudinaryField('image', blank=True, null=True)  # <-- updated
-
+    
+    invitation_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     class Meta:
         db_table = 'study_groups'
@@ -38,6 +41,10 @@ class StudyGroup(models.Model):
 
     def __str__(self):
         return self.group_name
+     
+    @property
+    def invitation_link(self):
+        return f"{settings.FRONTEND_URL}/groups/join/{self.id}/{self.invitation_token}/"
     
     @property
     def member_count(self):

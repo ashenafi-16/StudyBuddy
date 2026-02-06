@@ -1,3 +1,4 @@
+// Types for study related features
 export interface StudyActivity {
     id: number;
     date: string;

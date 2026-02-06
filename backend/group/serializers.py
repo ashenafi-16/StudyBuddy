@@ -59,19 +59,57 @@ class StudyGroupListSerializer(serializers.ModelSerializer):
 
 
 class StudyGroupDetailSerializer(StudyGroupListSerializer):
-    recent_messages = serializers.SerializerMethodField()
-    active_tasks = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
+    invitation_link = serializers.SerializerMethodField()
+    chat_id = serializers.SerializerMethodField()
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
 
     class Meta(StudyGroupListSerializer.Meta):
-        fields = StudyGroupListSerializer.Meta.fields + ('recent_messages', 'active_tasks')
+        fields = StudyGroupListSerializer.Meta.fields + (
+            'created_by_name', 'invitation_link', 'members', 'chat_id'
+        )
 
-    def get_recent_messages(self, obj):
-        recent_messages = obj.messages.all()[:5]
-        return MessageBasicSerializer(recent_messages, many=True).data
+    def get_members(self, obj):
+        active_members = obj.members.filter(is_active=True)
+        return GroupMemberSerializer(active_members, many=True).data
 
-    def get_active_tasks(self, obj):
-        active_tasks = obj.tasks.filter(status__in=['pending', 'in_progress'])[:5]
-        return TaskBasicSerializer(active_tasks, many=True).data
+    def get_invitation_link(self, obj):
+        user = self.context['request'].user
+        if not user.is_authenticated:
+            return None
+        
+        # Always visible if public
+        if obj.is_public:
+            return obj.invitation_link
+            
+        # For private groups, only show to admins/moderators
+        membership = obj.members.filter(user=user, is_active=True).first()
+        if membership and membership.role in ['admin', 'moderator']:
+            return obj.invitation_link
+        return None
+
+    def get_chat_id(self, obj):
+        try:
+            return obj.conversation.id
+        except:
+            return None
+        
+
+
+# class StudyGroupDetailSerializer(StudyGroupListSerializer):
+#     recent_messages = serializers.SerializerMethodField()
+#     active_tasks = serializers.SerializerMethodField()
+
+#     class Meta(StudyGroupListSerializer.Meta):
+#         fields = StudyGroupListSerializer.Meta.fields + ('recent_messages', 'active_tasks')
+
+#     def get_recent_messages(self, obj):
+#         recent_messages = obj.messages.all()[:5]
+#         return MessageBasicSerializer(recent_messages, many=True).data
+
+#     def get_active_tasks(self, obj):
+#         active_tasks = obj.tasks.filter(status__in=['pending', 'in_progress'])[:5]
+#         return TaskBasicSerializer(active_tasks, many=True).data
 
 
 class GroupMemberSerializer(serializers.ModelSerializer):

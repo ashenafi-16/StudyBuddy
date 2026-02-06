@@ -1,9 +1,11 @@
 // User types
 export interface UserBasic {
     id: number;
+    username?: string;
     email: string;
     full_name: string;
     profile_pic_url?: string;
+    bio?: string;
 }
 
 // Group types
@@ -17,12 +19,17 @@ export interface StudyGroup {
     group_description: string;
     group_type: GroupType;
     created_by: UserBasic;
+    created_by_name?: string;
     member_count: number;
     max_members: number;
     is_public: boolean;
     created_at: string;
     is_member?: boolean;
     user_role?: MemberRole | null;
+    profile_pic?: string;
+    profile_pic_url?: string;
+    invitation_link?: string;
+    chat_id?: number;
 }
 
 export interface StudyGroupDetail extends StudyGroup {
