@@ -76,6 +76,8 @@ function SignupRedirect() {
   return <Navigate to="/subscription" replace />;
 }
 
+import NotificationsPage from "./pages/NotificationsPage";
+
 function AppRoutes() {
   const { loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -117,6 +119,7 @@ function AppRoutes() {
         <Route path="/planner" element={<StudyPlannerPage />} />
         <Route path="/resources" element={<ResourceLibraryPage />} />
         <Route path="/pomodoro" element={<PomodoroTimerPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Route>
     </Routes>
   );

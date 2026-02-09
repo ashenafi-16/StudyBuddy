@@ -2,42 +2,59 @@ from datetime import timedelta
 from django.utils import timezone
 from .models import StudyStreak, Achievement, UserAchievement
 from Notifications.models import Notification
+from django.db import transaction
 
 def update_streak(user):
     today = timezone.now().date()
+    yesteday = today - timedelta(days=1)
 
-    streak, created =  StudyStreak.objects.get_or_create(user=user)
+    with transaction.atomic():
+        # select_for_update prevents multiple processes from editing the same streak at once
+        streak, created = StudyStreak.objects.select_for_update().get_or_create(user=user)
+        
+        # check if they already studied today
+        if streak.last_active_date == today:
+            return streak
+        
+        # check if they studied yesterday
+        if streak.last_active_date == yesteday:
+            streak.current_streak += 1
+        else:
+            # if they missed a day, reset the streak
+            streak.current_streak = 1
+        
+        streak.last_active_date = today
+        streak.longest_streak = max(streak.longest_streak, streak.current_streak)
+        streak.save()
 
-    if streak.last_active_date == today:
-        return streak
-    
-    if streak.last_active_date == today - timedelta(days=1):
-        streak.current_streak += 1
-    else:
-        streak.current_streak = 1
-    
-    streak.last_active_date = today
-    streak.longest_streak = max(streak.longest_streak, streak.current_streak)
+        check_and_award(user, streak.current_streak)
+
+    return streak
 
 def check_and_award(user, streak_days):
-    achievements = Achievement.objects.all()
+    awarded_ids = UserAchievement.objects.filter(user=user).values_list('achievement_id', flat=True)
 
-    for achievement in achievements:
-        user_achievement, created = UserAchievement.objects.get_or_create(
+    eligible_achievements = Achievement.objects.filter(
+        required_days__lte=streak_days
+    ).exclude(id__in=awarded_ids)   
+
+    if not eligible_achievements.exists():
+        return
+    
+    new_user_achievements = []
+    new_notifications = []
+
+    for achievement in eligible_achievements:
+        new_user_achievements.append(UserAchievement(user=user, achievement=achievement))
+        new_notifications.append(Notification(
             user=user, 
-            achievement=achievement
-        )
+            notification_type=Notification.NotificationTypes.system, 
+            title="🎉 New Achievement Unlocked!",
+            message=f"You've earned the '{achievement.name}' badge! 🔥"
+        ))
 
-        if created and streak_days >= achievement.required_days:
-            Notification.objects.create(
-                user = user, 
-                notification_type = Notification.NotificationTypes.system, 
-                title = "🎉 New Achievement Unlocked!",
-                message=(
-                    f"Congratulations! You earned the "
-                    f"'{achievement.name}' badge by maintaining "
-                    f"a {achievement.required_days}-day study streak. 🔥"
-                )
-            )
+    # Single DB hits for multiple records
+    UserAchievement.objects.bulk_create(new_user_achievements)
+    Notification.objects.bulk_create(new_notifications)
 
-  
+

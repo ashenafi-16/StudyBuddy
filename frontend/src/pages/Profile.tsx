@@ -182,15 +182,30 @@ export default function Profile() {
 
   // Contribution Graph Data
   const contributionData = useMemo(() => {
+    if (!studyData) return [];
+
+    // Generate dates for the last year, aligned to weeks (starting Sunday)
     const today = new Date();
+    const currentDay = today.getDay(); // 0 is Sunday
+
+    // Start from Sunday, 52 weeks ago
+    // We go back 52 full weeks plus the days of the current week to align strictly to Sunday start.
+    const daysToSubtract = (52 * 7) + currentDay;
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - daysToSubtract);
+
     const days = [];
     const activityMap = new Map();
-    studyData?.recent_activity.forEach(act => activityMap.set(act.date, act.duration_minutes));
+    studyData.recent_activity.forEach(act => activityMap.set(act.date, act.duration_minutes));
 
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+    // Iterate day by day from startDate to today
+    const loopDate = new Date(startDate);
+
+    // We want to ensure we cover the range up to today. 
+    // And ideally fill the last week's column up to Saturday if we want a full grid,
+    // OR just stop at today (which is what GitHub does, leaving the bottom of the last column empty).
+    while (loopDate <= today) {
+      const dateStr = loopDate.toISOString().split('T')[0];
       const minutes = activityMap.get(dateStr) || 0;
 
       let level = 0;
@@ -199,21 +214,30 @@ export default function Profile() {
       if (minutes >= 60) level = 3;
       if (minutes >= 120) level = 4;
 
-      days.push({ date: dateStr, minutes, level, dayOfWeek: d.getDay() });
+      days.push({
+        date: dateStr,
+        minutes,
+        level,
+        dayOfWeek: loopDate.getDay(),
+        month: loopDate.toLocaleString('default', { month: 'short' })
+      });
+
+      loopDate.setDate(loopDate.getDate() + 1);
     }
     return days;
-  }, [studyData?.recent_activity]);
+  }, [studyData]);
 
   const totalContributions = useMemo(() => {
     return contributionData.filter(d => d.level > 0).length;
   }, [contributionData]);
 
   const getLevelColor = (level: number) => {
+    // GitHub-like green scale or "Green Button" style
     switch (level) {
-      case 1: return "bg-emerald-900/60";
-      case 2: return "bg-emerald-700/70";
-      case 3: return "bg-emerald-500";
-      case 4: return "bg-emerald-400";
+      case 1: return "bg-green-900";
+      case 2: return "bg-green-700";
+      case 3: return "bg-green-500";
+      case 4: return "bg-green-400";
       default: return "bg-slate-800/50";
     }
   };
@@ -221,19 +245,23 @@ export default function Profile() {
   // Month labels for contribution graph
   const monthLabels = useMemo(() => {
     const months: { label: string; offset: number }[] = [];
-    let currentMonth = -1;
+    let currentMonth = "";
 
     contributionData.forEach((day, index) => {
-      const date = new Date(day.date);
-      const month = date.getMonth();
-      if (month !== currentMonth) {
-        currentMonth = month;
+      // Check if month changes.
+      // We only want to label if the first day of that month roughly aligns with a column start? 
+      // Actually standard implies just labeling when the month changes index-wise.
+      if (day.month !== currentMonth) {
+        currentMonth = day.month;
+        // Only add if it's not the very fast week to avoid crowding?? 
+        // GitHub labels appear over the column where the month starts.
         months.push({
-          label: date.toLocaleString('default', { month: 'short' }),
+          label: currentMonth,
           offset: Math.floor(index / 7)
         });
       }
     });
+    // Filter out if too close? For now keep simple.
     return months;
   }, [contributionData]);
 
@@ -426,8 +454,9 @@ export default function Profile() {
         </div>
 
         {/* Contribution Graph */}
-        <div className="bg-[#0d1117] border border-slate-700/50 rounded-2xl p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        {/* Contribution Graph */}
+        <div className="bg-[#0d1117] border border-slate-700/50 rounded-2xl p-6 mb-8 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h3 className="text-white font-semibold flex items-center gap-2">
               <Calendar size={18} className="text-slate-400" />
               {totalContributions} study sessions in the last year
@@ -435,25 +464,26 @@ export default function Profile() {
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span>Less</span>
               <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-sm bg-slate-800/50" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-900/60" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-700/70" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-500" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-400" />
+                <div className="w-4 h-4 rounded-sm bg-slate-800/50" />
+                <div className="w-4 h-4 rounded-sm bg-green-900" />
+                <div className="w-4 h-4 rounded-sm bg-green-700" />
+                <div className="w-4 h-4 rounded-sm bg-green-500" />
+                <div className="w-4 h-4 rounded-sm bg-green-400" />
               </div>
               <span>More</span>
             </div>
           </div>
 
           {/* Month Labels */}
-          <div className="overflow-x-auto pb-2">
+          <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             <div className="min-w-max">
-              <div className="flex gap-[3px] pl-8 mb-1">
+              <div className="flex gap-1 pl-8 mb-2">
                 {monthLabels.map((month, i) => (
                   <div
                     key={i}
-                    className="text-[10px] text-slate-500"
-                    style={{ marginLeft: i === 0 ? 0 : `${(month.offset - (monthLabels[i - 1]?.offset || 0) - 1) * 15}px` }}
+                    className="text-[10px] text-slate-500 font-medium"
+                    // Multiplier 20 = 16px (w-4) + 4px (gap-1)
+                    style={{ marginLeft: i === 0 ? 0 : `${(month.offset - (monthLabels[i - 1]?.offset || 0) - 1) * 20}px` }}
                   >
                     {month.label}
                   </div>
@@ -461,27 +491,30 @@ export default function Profile() {
               </div>
 
               {/* Grid */}
-              <div className="flex gap-[3px]">
-                {/* Day labels */}
-                <div className="flex flex-col gap-[3px] text-[10px] text-slate-500 pr-2">
-                  <div className="h-3" />
-                  <div className="h-3 leading-3">Mon</div>
-                  <div className="h-3" />
-                  <div className="h-3 leading-3">Wed</div>
-                  <div className="h-3" />
-                  <div className="h-3 leading-3">Fri</div>
-                  <div className="h-3" />
+              <div className="flex gap-1">
+                {/* Day labels column */}
+                <div className="flex flex-col gap-1 text-[10px] text-slate-500 pr-2">
+                  <div className="h-4" /> {/* Sun spacer */}
+                  <div className="h-4 leading-4">Mon</div>
+                  <div className="h-4" />
+                  <div className="h-4 leading-4">Wed</div>
+                  <div className="h-4" />
+                  <div className="h-4 leading-4">Fri</div>
+                  <div className="h-4" />
                 </div>
 
                 {/* Weeks */}
                 {Array.from({ length: Math.ceil(contributionData.length / 7) }).map((_, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col gap-[3px]">
+                  <div key={weekIndex} className="flex flex-col gap-1">
+                    {/* Slice returns items for this week. 
+                        Since we aligned start date to Sunday, index 0 is always Sunday. 
+                    */}
                     {contributionData.slice(weekIndex * 7, (weekIndex * 7) + 7).map((day, dayIndex) => (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`w-3 h-3 rounded-sm ${getLevelColor(day.level)} transition-all hover:ring-2 hover:ring-white/20 cursor-pointer relative group`}
+                        className={`w-4 h-4 rounded-sm ${getLevelColor(day.level)} transition-all hover:ring-2 hover:ring-white/20 cursor-pointer relative group`}
                       >
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover:block whitespace-nowrap bg-slate-800 text-white text-[11px] py-1.5 px-2.5 rounded-lg shadow-xl border border-slate-700">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 hidden group-hover:block whitespace-nowrap bg-slate-800 text-white text-[11px] py-1.5 px-2.5 rounded-lg shadow-xl border border-slate-700 pointer-events-none">
                           <strong>{day.minutes > 0 ? `${day.minutes} min` : 'No study'}</strong>
                           <br />
                           <span className="text-slate-400">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>

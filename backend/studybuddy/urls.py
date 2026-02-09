@@ -36,7 +36,7 @@ urlpatterns = [
     path('api/', include('pomodoro.urls')),
     path('api/subscriptions/', include('subscriptions.urls')),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/streak/', include('studytracker.urls')),
+    path('api/studytracker/', include('studytracker.urls')),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 

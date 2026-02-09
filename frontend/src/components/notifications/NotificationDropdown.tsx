@@ -185,8 +185,8 @@ export default function NotificationDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 bg-[#1e293b] shadow-xl shadow-black/20 rounded-2xl overflow-hidden border border-slate-700 z-50">
-          <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-[#0f172a]/50">
+        <div className="absolute right-0 mt-3 w-80 bg-slate-900 shadow-2xl shadow-black rounded-2xl overflow-hidden border border-slate-600 z-50 ring-1 ring-black/5">
+          <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
             <span className="font-semibold text-white">Notifications</span>
             <div className="flex items-center space-x-3">
               <button
@@ -206,7 +206,7 @@ export default function NotificationDropdown() {
             </div>
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar bg-slate-900">
             {loading ? (
               <div className="p-8 text-center text-slate-500">Loading...</div>
             ) : notifications.length === 0 ? (
@@ -215,12 +215,18 @@ export default function NotificationDropdown() {
                 <p>No notifications yet</p>
               </div>
             ) : (
-              notifications.map(notification => (
-                <div key={notification.id} className="border-b border-slate-700/50 last:border-0">
+              notifications.slice(0, 5).map(notification => (
+                <div key={notification.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/50 transition-colors">
                   <NotificationItem notification={notification} />
                 </div>
               ))
             )}
+          </div>
+
+          <div className="p-3 bg-slate-900 border-t border-slate-700 text-center">
+            <a href="/notifications" onClick={() => setIsOpen(false)} className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors block w-full">
+              See More
+            </a>
           </div>
         </div>
       )}
