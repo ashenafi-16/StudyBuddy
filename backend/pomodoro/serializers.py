@@ -105,6 +105,12 @@ class UserPomodoroSessionSerializer(serializers.ModelSerializer):
     long_break_duration = serializers.SerializerMethodField()
     sessions_before_long_break = serializers.SerializerMethodField()
     
+    # Fields delegated from group session
+    sync_mode = serializers.SerializerMethodField()
+    allow_member_pause = serializers.SerializerMethodField()
+    is_leader = serializers.SerializerMethodField()
+    is_creator = serializers.SerializerMethodField()
+    
     class Meta:
         from .models import UserPomodoroSession
         model = UserPomodoroSession
@@ -117,6 +123,7 @@ class UserPomodoroSessionSerializer(serializers.ModelSerializer):
             'current_session_number',
             'work_duration', 'break_duration', 
             'long_break_duration', 'sessions_before_long_break',
+            'sync_mode', 'allow_member_pause', 'is_leader', 'is_creator',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
@@ -152,4 +159,25 @@ class UserPomodoroSessionSerializer(serializers.ModelSerializer):
     
     def get_sessions_before_long_break(self, obj):
         return obj.get_settings()['sessions_before_long_break']
+
+    def get_sync_mode(self, obj):
+        """Get sync mode from group session."""
+        group_session = obj.group.pomodoro_sessions.first()
+        return group_session.sync_mode if group_session else 'flexible'
+
+    def get_allow_member_pause(self, obj):
+        """Get allow_member_pause from group session."""
+        group_session = obj.group.pomodoro_sessions.first()
+        return group_session.allow_member_pause if group_session else True
+
+    def get_is_leader(self, obj):
+        """Check if user is leader (for UI controls). Flexible mode users are always leaders of their own timer."""
+        return True
+
+    def get_is_creator(self, obj):
+        """Check if user is group creator."""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.group.created_by == request.user
 

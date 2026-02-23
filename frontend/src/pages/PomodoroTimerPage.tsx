@@ -21,6 +21,8 @@ import {
     type PomodoroSession
 } from '../api/pomodoroApi';
 
+import { useStudyTracker } from '../hooks/useStudyTracker';
+
 export default function PomodoroTimerPage() {
     const [groups, setGroups] = useState<StudyGroup[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<StudyGroup | null>(null);
@@ -40,6 +42,14 @@ export default function PomodoroTimerPage() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const lastNotifiedPhaseRef = useRef<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
+
+    // Automatic Study Tracking
+    // Only track if session is running, user has joined, and it IS a work phase
+    const isTracking = session?.state === 'running' &&
+        hasJoinedLocal &&
+        session?.phase === 'work';
+
+    useStudyTracker(isTracking);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
@@ -65,12 +75,48 @@ export default function PomodoroTimerPage() {
 
     // Sync session state to global context for navbar indicator
     useEffect(() => {
-        if (session && session.state !== 'idle') {
-            setActiveSession(session, selectedGroup?.group_name || null);
-        } else {
-            setActiveSession(null, null);
+        if (!session) return;
+
+        // Special handling for Flexible Mode:
+        // If the session is running but we haven't joined locally, we should NOT show it in navbar.
+        // We should also ensure we clean up any "stuck" global state for this group.
+        if (session.state === 'running' && !hasJoinedLocal) {
+            const stored = localStorage.getItem('pomodoro_active_group');
+            if (stored) {
+                try {
+                    const { groupId } = JSON.parse(stored);
+                    if (groupId === session.group) {
+                        // We found a zombie entry for this group! Clear it.
+                        setActiveSession(null, null);
+                    }
+                } catch (e) {
+                    // Ignore parsing errors
+                }
+            }
+            return;
         }
-    }, [session, selectedGroup, setActiveSession]);
+
+        // Case 1: Session is active (running/paused) AND we are part of it -> Sync to global
+        if ((session.state === 'running' || session.state === 'paused') && hasJoinedLocal) {
+            setActiveSession(session, selectedGroup?.group_name || null);
+        }
+
+        // Case 2: Session is idle (completed/reset) -> Only clear if WE were the active one
+        else {
+            const stored = localStorage.getItem('pomodoro_active_group');
+            if (stored) {
+                try {
+                    const { groupId } = JSON.parse(stored);
+                    if (groupId === session.group) {
+                        // We are the owner, and we are now idle -> Clear it
+                        setActiveSession(null, null);
+                    }
+                } catch (e) {
+                    // Ignore parsing errors
+                }
+            }
+        }
+    }, [session, selectedGroup, setActiveSession, hasJoinedLocal]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // WebSocket Setup
@@ -87,8 +133,8 @@ export default function PomodoroTimerPage() {
             if (msg.type === 'timer_update' || msg.type === 'timer_state') {
                 setSession(msg.data);
 
-                // Handle forced sync mode
-                if (msg.sync_mode === 'forced' || msg.data?.is_leader) {
+                // Handle forced sync mode - NO LONGER AUTO-JOIN for members
+                if (msg.data?.is_leader) {
                     setHasJoinedLocal(true);
                 }
 
@@ -221,7 +267,16 @@ export default function PomodoroTimerPage() {
         try {
             const data = await fetchGroups();
             setGroups(data);
-            if (data.length > 0) setSelectedGroup(data[0]);
+
+            // Restore previously selected group from localStorage
+            const savedGroupId = localStorage.getItem('pomodoro_selected_group');
+            const savedGroup = savedGroupId ? data.find((g: StudyGroup) => g.id === Number(savedGroupId)) : null;
+
+            if (savedGroup) {
+                setSelectedGroup(savedGroup);
+            } else if (data.length > 0) {
+                setSelectedGroup(data[0]);
+            }
         } catch (err: any) {
             console.log('No groups found:', err.message);
         } finally {
@@ -234,7 +289,7 @@ export default function PomodoroTimerPage() {
             const data = await fetchPomodoroByGroup(groupId);
             setSession(data);
 
-            if (data.sync_mode === 'forced' || data.is_leader) {
+            if (data.is_leader) {
                 setHasJoinedLocal(true);
             } else if (data.state === 'running') {
                 setHasJoinedLocal(false);
@@ -413,7 +468,10 @@ export default function PomodoroTimerPage() {
                             {groups.map(group => (
                                 <button
                                     key={group.id}
-                                    onClick={() => setSelectedGroup(group)}
+                                    onClick={() => {
+                                        setSelectedGroup(group);
+                                        localStorage.setItem('pomodoro_selected_group', String(group.id));
+                                    }}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${selectedGroup?.id === group.id
                                         ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white'
                                         : 'text-slate-400 hover:text-white hover:bg-slate-700'

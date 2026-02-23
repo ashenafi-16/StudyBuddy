@@ -5,8 +5,8 @@ from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models import PomodoroSession
-from .serializers import PomodoroSessionSerializer, PomodoroSettingsSerializer
+from .models import PomodoroSession, UserPomodoroSession
+from .serializers import PomodoroSessionSerializer, PomodoroSettingsSerializer, UserPomodoroSessionSerializer
 from group.models import GroupMember
 from subscriptions.permissions import IsPremiumUser
 
@@ -27,17 +27,34 @@ class PomodoroViewSet(viewsets.ModelViewSet):
         channel_layer = get_channel_layer()
         room_group_name = f'pomodoro_{session.group_id}'
         
-        # Prepare data exactly like the consumer's get_timer_state
-        serializer = PomodoroSessionSerializer(session, context={'request': self.request})
-        state = serializer.data
+        # Determine if we need to broadcast a user-specific update (Flexible mode)
+        # or a shared update (Forced mode)
+        sync_mode = session.sync_mode
+        
+        if sync_mode == 'flexible' and 'user_session' in kwargs:
+            user_session = kwargs.pop('user_session')
+            # For flexible mode, we send the USER session state, but wrapped to look like shared session
+            # This ensures clients see the "active" timer of the user who triggered the action
+            serializer = UserPomodoroSessionSerializer(user_session)
+            state = serializer.data
+            # CRITICAL: Overlay the Shared Session ID so frontend API calls continue to work
+            state['id'] = session.id 
+            
+            # Flexible mode uses 'timer_invitation' for start/resume to notify others
+            msg_type = 'timer_invitation' if action in ['started', 'resumed'] else 'timer_update'
+        else:
+            # Forced mode (or standard shared update)
+            serializer = PomodoroSessionSerializer(session, context={'request': self.request})
+            state = serializer.data
+            msg_type = 'timer_update'
         
         async_to_sync(channel_layer.group_send)(
             room_group_name,
             {
-                'type': 'timer_update',
+                'type': 'timer_update' if msg_type == 'timer_update' else 'timer_invitation', # Consumer expects specific handler names
                 'action': action,
                 'data': state,
-                'sync_mode': session.sync_mode,
+                'sync_mode': sync_mode,
                 **kwargs
             }
         )
@@ -67,6 +84,22 @@ class PomodoroViewSet(viewsets.ModelViewSet):
         return PomodoroSession.objects.filter(
             group_id__in=user_groups
         ).select_related('group', 'started_by')
+
+    def _get_flexible_response(self, session, request):
+        """
+        Helper to return the UserPomodoroSession state masked with Shared Session ID.
+        Used for Flexible mode responses.
+        """
+        user_session, created = UserPomodoroSession.objects.get_or_create(
+            group=session.group,
+            user=request.user
+        )
+        serializer = UserPomodoroSessionSerializer(user_session)
+        data = serializer.data
+        # CRITICAL: Return the Shared Session ID so frontend API calls target the correct resource
+        data['id'] = session.id
+        
+        return Response(data)
 
     @action(detail=False, methods=['get'])
     def by_group(self, request):
@@ -102,6 +135,10 @@ class PomodoroViewSet(viewsets.ModelViewSet):
             defaults={'started_by': request.user if is_member else None}
         )
         
+        # If Flexible mode, return the User's personal session state
+        if session.sync_mode == 'flexible':
+            return self._get_flexible_response(session, request)
+        
         serializer = self.get_serializer(session)
         return Response(serializer.data)
 
@@ -109,6 +146,21 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     def start(self, request, pk=None):
         """Start the timer for the current phase."""
         session = self.get_object()
+        
+        # Flexible Mode Delegation
+        if session.sync_mode == 'flexible':
+             # In Flexible mode, members start their OWN timer
+             user_session, _ = UserPomodoroSession.objects.get_or_create(group=session.group, user=request.user)
+             if self._has_active_session_elsewhere(request.user, session.group_id):
+                 return Response(
+                     {'error': 'You already have an active Pomodoro session in another group.'},
+                     status=status.HTTP_400_BAD_REQUEST
+                 )
+             user_session.start()
+             self._broadcast_update(session, 'started', started_by=request.user.username, user_session=user_session)
+             return self._get_flexible_response(session, request)
+
+        # Forced Mode Logic
         if not session.can_control(request.user, 'start'):
             return Response({'error': 'Only leaders can start the timer'}, status=status.HTTP_403_FORBIDDEN)
         
@@ -126,6 +178,14 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     def pause(self, request, pk=None):
         """Pause the timer, freezing the remaining time."""
         session = self.get_object()
+        
+        # Flexible Mode Delegation
+        if session.sync_mode == 'flexible':
+             user_session, _ = UserPomodoroSession.objects.get_or_create(group=session.group, user=request.user)
+             user_session.pause()
+             self._broadcast_update(session, 'paused', paused_by=request.user.username, user_session=user_session)
+             return self._get_flexible_response(session, request)
+             
         if not session.can_control(request.user, 'pause'):
             return Response({'error': 'You do not have permission to pause'}, status=status.HTTP_403_FORBIDDEN)
         session.pause()
@@ -136,6 +196,19 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     def resume(self, request, pk=None):
         """Resume the timer from where it was paused."""
         session = self.get_object()
+
+        # Flexible Mode Delegation
+        if session.sync_mode == 'flexible':
+             user_session, _ = UserPomodoroSession.objects.get_or_create(group=session.group, user=request.user)
+             if self._has_active_session_elsewhere(request.user, session.group_id):
+                 return Response(
+                     {'error': 'You already have an active Pomodoro session in another group.'},
+                     status=status.HTTP_400_BAD_REQUEST
+                 )
+             user_session.resume()
+             self._broadcast_update(session, 'resumed', resumed_by=request.user.username, user_session=user_session)
+             return self._get_flexible_response(session, request)
+
         if not session.can_control(request.user, 'resume'):
             return Response({'error': 'You do not have permission to resume'}, status=status.HTTP_403_FORBIDDEN)
         
@@ -153,6 +226,14 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     def reset(self, request, pk=None):
         """Reset the current phase to initial state."""
         session = self.get_object()
+
+        # Flexible Mode Delegation
+        if session.sync_mode == 'flexible':
+             user_session, _ = UserPomodoroSession.objects.get_or_create(group=session.group, user=request.user)
+             user_session.reset()
+             self._broadcast_update(session, 'reset', reset_by=request.user.username, user_session=user_session)
+             return self._get_flexible_response(session, request)
+
         if not session.can_control(request.user, 'reset'):
             return Response({'error': 'Only leaders can reset the timer'}, status=status.HTTP_403_FORBIDDEN)
         session.reset()
@@ -163,6 +244,14 @@ class PomodoroViewSet(viewsets.ModelViewSet):
     def next_phase(self, request, pk=None):
         """Move to the next phase (Work -> Break -> Work)."""
         session = self.get_object()
+
+        # Flexible Mode Delegation
+        if session.sync_mode == 'flexible':
+             user_session, _ = UserPomodoroSession.objects.get_or_create(group=session.group, user=request.user)
+             user_session.next_phase()
+             self._broadcast_update(session, 'next_phase', advanced_by=request.user.username, user_session=user_session)
+             return self._get_flexible_response(session, request)
+
         if not session.can_control(request.user, 'next_phase'):
             return Response({'error': 'Only leaders can skip phases'}, status=status.HTTP_403_FORBIDDEN)
         session.next_phase()

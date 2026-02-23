@@ -1,60 +1,62 @@
-from datetime import timedelta
-from django.utils import timezone
-from .models import StudyStreak, Achievement, UserAchievement
-from Notifications.models import Notification
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
+from .models import StudyStreak, Achievement, UserAchievement, StudyActivity
+from Notifications.models import Notification
 
-def update_streak(user):
+def record_activity_and_update_streak(user, duration=1):
+    # Called by the server whenever user activity is detected.
+   
     today = timezone.now().date()
-    yesteday = today - timedelta(days=1)
-
-    with transaction.atomic():
-        # select_for_update prevents multiple processes from editing the same streak at once
-        streak, created = StudyStreak.objects.select_for_update().get_or_create(user=user)
-        
-        # check if they already studied today
-        if streak.last_active_date == today:
-            return streak
-        
-        # check if they studied yesterday
-        if streak.last_active_date == yesteday:
-            streak.current_streak += 1
-        else:
-            # if they missed a day, reset the streak
-            streak.current_streak = 1
-        
-        streak.last_active_date = today
-        streak.longest_streak = max(streak.longest_streak, streak.current_streak)
-        streak.save()
-
-        check_and_award(user, streak.current_streak)
-
-    return streak
-
-def check_and_award(user, streak_days):
-    awarded_ids = UserAchievement.objects.filter(user=user).values_list('achievement_id', flat=True)
-
-    eligible_achievements = Achievement.objects.filter(
-        required_days__lte=streak_days
-    ).exclude(id__in=awarded_ids)   
-
-    if not eligible_achievements.exists():
-        return
     
-    new_user_achievements = []
-    new_notifications = []
-
-    for achievement in eligible_achievements:
-        new_user_achievements.append(UserAchievement(user=user, achievement=achievement))
-        new_notifications.append(Notification(
+    with transaction.atomic():
+        # 1. Update or Create the Daily Activity record
+        # select_for_update() prevents double-counting minutes
+        activity, _ = StudyActivity.objects.select_for_update().get_or_create(
             user=user, 
-            notification_type=Notification.NotificationTypes.system, 
-            title="🎉 New Achievement Unlocked!",
-            message=f"You've earned the '{achievement.name}' badge! 🔥"
-        ))
+            date=today,
+            defaults={'duration_minutes': 0}
+        )
+        activity.duration_minutes += duration
+        activity.save()
 
-    # Single DB hits for multiple records
-    UserAchievement.objects.bulk_create(new_user_achievements)
+        # We only proceed if they are EXACTLY at 10 (to avoid re-running logic at 11, 12, etc.)
+        # OR if they have > 10 but their streak last_active_date is still yesterday.
+        streak, _ = StudyStreak.objects.select_for_update().get_or_create(user=user)
+        
+        if activity.duration_minutes >= 10 and streak.last_active_date != today:
+            _process_streak_increment(user, streak, today)
+
+def _process_streak_increment(user, streak, today):
+    """Internal helper to handle the math of incrementing days."""
+    yesterday = today - timedelta(days=1)
+
+    if streak.last_active_date == yesterday:
+        streak.current_streak += 1
+    else:
+        # Missed a day or brand new user
+        streak.current_streak = 1
+
+    streak.last_active_date = today
+    streak.longest_streak = max(streak.longest_streak, streak.current_streak)
+    streak.save()
+
+    # Badge Logic
+    _check_badges(user, streak.current_streak)
+
+def _check_badges(user, streak_days):
+    earned_ids = UserAchievement.objects.filter(user=user).values_list('achievement_id', flat=True)
+    eligible = Achievement.objects.filter(required_days__lte=streak_days).exclude(id__in=earned_ids)
+
+    new_achievements = [UserAchievement(user=user, achievement=a) for a in eligible]
+    new_notifications = [
+        Notification(
+            user=user,
+            notification_type='system',
+            title="🔥 Streak Milestone!",
+            message=f"You've reached a {streak_days} day streak! '{a.name}' unlocked."
+        ) for a in eligible
+    ]
+
+    UserAchievement.objects.bulk_create(new_achievements)
     Notification.objects.bulk_create(new_notifications)
-
-

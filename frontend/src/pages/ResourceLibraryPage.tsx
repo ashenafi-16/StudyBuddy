@@ -8,10 +8,11 @@ import toast from 'react-hot-toast';
 import { Loading, ErrorMessage } from '../components/common/LoadingError';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { fetchMyGroups, type StudyGroup } from '../api/groupsApi';
 import {
     fetchFiles,
     fetchMyFiles,
-    fetchSharedWithMe,
+    fetchGroupFiles,
     uploadFile,
     deleteFile,
     getFileIcon,
@@ -20,10 +21,13 @@ import {
 } from '../api/resourcesApi';
 
 type ViewMode = 'grid' | 'list';
-type FilterMode = 'all' | 'my_files' | 'shared';
+type FilterMode = 'all' | 'my_files' | 'group';
 
 export default function ResourceLibraryPage() {
     const [files, setFiles] = useState<StudyFileList[]>([]);
+    const [userGroups, setUserGroups] = useState<StudyGroup[]>([]);
+    const [selectedUploadGroup, setSelectedUploadGroup] = useState<number | ''>('');
+    const [filterGroupId, setFilterGroupId] = useState<number | ''>('');
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -33,23 +37,36 @@ export default function ResourceLibraryPage() {
     const { isPremium } = useAuth();
 
     useEffect(() => {
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
         loadFiles();
-    }, [filterMode]);
+    }, [filterMode, filterGroupId]);
+
+    const loadInitialData = async () => {
+        try {
+            const groups = await fetchMyGroups();
+            setUserGroups(groups);
+            if (groups.length > 0) {
+                setSelectedUploadGroup(groups[0].id);
+            }
+        } catch (err) {
+            console.error('Failed to load groups:', err);
+        }
+    };
 
     const loadFiles = async () => {
         try {
             setLoading(true);
             let data: StudyFileList[];
 
-            switch (filterMode) {
-                case 'my_files':
-                    data = await fetchMyFiles();
-                    break;
-                case 'shared':
-                    data = await fetchSharedWithMe();
-                    break;
-                default:
-                    data = await fetchFiles();
+            if (filterMode === 'my_files') {
+                data = await fetchMyFiles();
+            } else if (filterMode === 'group' && filterGroupId) {
+                data = await fetchGroupFiles(Number(filterGroupId));
+            } else {
+                data = await fetchFiles();
             }
 
             setFiles(data);
@@ -65,12 +82,16 @@ export default function ResourceLibraryPage() {
             toast.error("Premium subscription required to upload files");
             return;
         }
+        if (!selectedUploadGroup) {
+            toast.error("Please select a group to upload to");
+            return;
+        }
         if (acceptedFiles.length === 0) return;
 
         setUploading(true);
         try {
             for (const file of acceptedFiles) {
-                await uploadFile(file);
+                await uploadFile(file, Number(selectedUploadGroup));
                 toast.success(`${file.name} uploaded successfully!`);
             }
             loadFiles();
@@ -79,7 +100,7 @@ export default function ResourceLibraryPage() {
         } finally {
             setUploading(false);
         }
-    }, []);
+    }, [selectedUploadGroup, isPremium]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -151,51 +172,70 @@ export default function ResourceLibraryPage() {
                 </div>
 
                 {/* Upload Zone */}
-                <div
-                    {...(!isPremium ? {} : getRootProps())}
-                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${isPremium ? 'cursor-pointer' : 'cursor-default'} ${isDragActive
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : !isPremium
-                            ? 'border-slate-800 bg-[#1e293b]/50 opacity-75'
-                            : 'border-slate-700 hover:border-slate-600 bg-[#1e293b]'
-                        }`}
-                >
-                    {!isPremium ? (
-                        <div className="flex flex-col items-center">
-                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-500">
-                                <Lock size={32} />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Premium Feature</h3>
-                            <p className="text-slate-400 max-w-md mx-auto mb-6">
-                                Uploading and sharing study materials is only available for Premium members.
-                            </p>
-                            <Link
-                                to="/subscription"
-                                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+                <div className="space-y-4">
+                    {isPremium && userGroups.length > 0 && (
+                        <div className="flex items-center gap-3 bg-[#1e293b] p-4 rounded-xl border border-slate-700 w-fit">
+                            <label className="text-sm font-medium text-slate-300">Upload to:</label>
+                            <select
+                                value={selectedUploadGroup}
+                                onChange={(e) => setSelectedUploadGroup(Number(e.target.value))}
+                                className="bg-slate-800 text-white text-sm rounded-lg border border-slate-700 outline-none p-1.5 focus:border-purple-500"
                             >
-                                Upgrade to Premium
-                            </Link>
+                                {userGroups.map(group => (
+                                    <option key={group.id} value={group.id}>
+                                        {group.group_name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    ) : (
-                        <>
-                            <input {...getInputProps()} />
-                            <Upload className={`mx-auto mb-4 ${isDragActive ? 'text-purple-400' : 'text-slate-500'}`} size={48} />
-                            {uploading ? (
-                                <p className="text-purple-400 font-medium">Uploading...</p>
-                            ) : isDragActive ? (
-                                <p className="text-purple-400 font-medium">Drop files here...</p>
-                            ) : (
-                                <>
-                                    <p className="text-white font-medium mb-2">
-                                        Drag & drop files here, or click to browse
-                                    </p>
-                                    <p className="text-slate-500 text-sm">
-                                        Supports PDF, Images, Word, PowerPoint, and more
-                                    </p>
-                                </>
-                            )}
-                        </>
                     )}
+
+                    <div
+                        {...(!isPremium ? {} : getRootProps())}
+                        className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${isPremium ? 'cursor-pointer' : 'cursor-default'} ${isDragActive
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : !isPremium
+                                ? 'border-slate-800 bg-[#1e293b]/50 opacity-75'
+                                : 'border-slate-700 hover:border-slate-600 bg-[#1e293b]'
+                            }`}
+                    >
+                        {!isPremium ? (
+                            <div className="flex flex-col items-center">
+                                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-500">
+                                    <Lock size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Premium Feature</h3>
+                                <p className="text-slate-400 max-w-md mx-auto mb-6">
+                                    Uploading and sharing study materials is only available for Premium members.
+                                </p>
+                                <Link
+                                    to="/subscription"
+                                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+                                >
+                                    Upgrade to Premium
+                                </Link>
+                            </div>
+                        ) : (
+                            <>
+                                <input {...getInputProps()} />
+                                <Upload className={`mx-auto mb-4 ${isDragActive ? 'text-purple-400' : 'text-slate-500'}`} size={48} />
+                                {uploading ? (
+                                    <p className="text-purple-400 font-medium">Uploading...</p>
+                                ) : isDragActive ? (
+                                    <p className="text-purple-400 font-medium">Drop files here...</p>
+                                ) : (
+                                    <>
+                                        <p className="text-white font-medium mb-2">
+                                            Drag & drop files here, or click to browse
+                                        </p>
+                                        <p className="text-slate-500 text-sm">
+                                            Supports PDF, Images, Word, PowerPoint, and more
+                                        </p>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Toolbar */}
@@ -213,13 +253,29 @@ export default function ResourceLibraryPage() {
                     </div>
 
                     {/* Filter & View */}
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
+                        {/* Group Selector when in group mode */}
+                        {filterMode === 'group' && (
+                            <select
+                                value={filterGroupId}
+                                onChange={(e) => setFilterGroupId(e.target.value ? Number(e.target.value) : '')}
+                                className="bg-[#1e293b] text-white text-sm rounded-xl border border-slate-700 outline-none px-3 py-2 focus:border-purple-500"
+                            >
+                                <option value="">Select Group</option>
+                                {userGroups.map(group => (
+                                    <option key={group.id} value={group.id}>
+                                        {group.group_name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+
                         {/* Filter Tabs */}
                         <div className="flex bg-[#1e293b] rounded-xl p-1 border border-slate-700">
                             {[
                                 { value: 'all', label: 'All' },
                                 { value: 'my_files', label: 'My Files' },
-                                { value: 'shared', label: 'Shared' }
+                                { value: 'group', label: 'By Group' }
                             ].map(({ value, label }) => (
                                 <button
                                     key={value}
@@ -280,11 +336,11 @@ export default function ResourceLibraryPage() {
                                             <span>{file.file_size_display}</span>
                                         </div>
                                         <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-                                            <span>@{file.owner_username}</span>
-                                            {file.shared_count > 0 && (
-                                                <span className="flex items-center gap-1">
+                                            <span>@{file.owner}</span>
+                                            {file.group_name && (
+                                                <span className="flex items-center gap-1 text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
                                                     <Users size={12} />
-                                                    {file.shared_count}
+                                                    {file.group_name}
                                                 </span>
                                             )}
                                         </div>
@@ -319,6 +375,7 @@ export default function ResourceLibraryPage() {
                                         <th className="text-left px-6 py-4 text-sm font-medium text-slate-400">Type</th>
                                         <th className="text-left px-6 py-4 text-sm font-medium text-slate-400">Size</th>
                                         <th className="text-left px-6 py-4 text-sm font-medium text-slate-400">Owner</th>
+                                        <th className="text-left px-6 py-4 text-sm font-medium text-slate-400">Group</th>
                                         <th className="text-left px-6 py-4 text-sm font-medium text-slate-400">Actions</th>
                                     </tr>
                                 </thead>
@@ -340,7 +397,10 @@ export default function ResourceLibraryPage() {
                                                 {file.file_size_display}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-400">
-                                                @{file.owner_username}
+                                                @{file.owner}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-400">
+                                                {file.group_name || 'Personal'}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex gap-2">

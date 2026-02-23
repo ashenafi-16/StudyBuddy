@@ -1,18 +1,20 @@
 // src/Components/common/Navbar.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import NotificationDropdown from "../notifications/NotificationDropdown";
 import { useAuth } from "../../contexts/AuthContext";
 import ActiveTimerIndicator from './ActiveTimerIndicator';
 
 interface NavbarProps {
+  onMenuClick?: () => void;
   user_profile?: {
     full_name: String;
     profile_pic_url?: string;
   };
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
+const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { isPremium, user } = useAuth();
   const safeUserProfile = {
@@ -39,12 +41,21 @@ const Navbar: React.FC<NavbarProps> = ({ user_profile }) => {
       <div className="flex justify-between items-center">
         {/* Logo/Brand + Active Timer */}
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <button
+            onClick={onMenuClick}
+            className="p-2 text-slate-400 hover:text-white lg:hidden -ml-2"
+          >
+            <Menu size={24} />
+          </button>
+
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
             Study<span className="text-emerald-400">Buddy</span>
           </h1>
 
           {/* Active Timer Indicator - Shows when a Pomodoro timer is running */}
-          <ActiveTimerIndicator />
+          <div className="hidden sm:block">
+            <ActiveTimerIndicator />
+          </div>
         </div>
 
         {/* Right Section */}

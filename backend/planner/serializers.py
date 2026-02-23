@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import StudySession
+from group.models import StudyGroup
 
 User = get_user_model()
 
@@ -14,6 +15,13 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_pic_url']
 
 
+class StudyGroupMinimalSerializer(serializers.ModelSerializer):
+    """Minimal group info for session display."""
+    class Meta:
+        model = StudyGroup
+        fields = ['id', 'group_name', 'group_type']
+
+
 class StudySessionSerializer(serializers.ModelSerializer):
     """Serializer for StudySession CRUD operations."""
     host = UserMinimalSerializer(read_only=True)
@@ -25,8 +33,17 @@ class StudySessionSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    study_group = StudyGroupMinimalSerializer(read_only=True)
+    study_group_id = serializers.PrimaryKeyRelatedField(
+        queryset=StudyGroup.objects.all(),
+        source='study_group',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
     meeting_url = serializers.ReadOnlyField()
     is_active = serializers.ReadOnlyField()
+    subject = serializers.ReadOnlyField()
 
     class Meta:
         model = StudySession
@@ -34,6 +51,7 @@ class StudySessionSerializer(serializers.ModelSerializer):
             'id', 'title', 'subject', 'description',
             'start_time', 'end_time',
             'host', 'participant', 'participant_id',
+            'study_group', 'study_group_id',
             'meeting_id', 'meeting_url', 'is_active', 'status',
             'created_at', 'updated_at'
         ]
@@ -48,12 +66,19 @@ class StudySessionCreateSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    study_group_id = serializers.PrimaryKeyRelatedField(
+        queryset=StudyGroup.objects.all(),
+        source='study_group',
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = StudySession
         fields = [
-            'title', 'subject', 'description',
-            'start_time', 'end_time', 'participant_id'
+            'title', 'description',
+            'start_time', 'end_time',
+            'participant_id', 'study_group_id'
         ]
 
     def validate(self, data):
@@ -102,6 +127,11 @@ class CalendarEventSerializer(serializers.ModelSerializer):
             'meeting_url': obj.meeting_url,
             'is_active': obj.is_active,
             'status': obj.status,
+            'study_group': {
+                'id': obj.study_group.id,
+                'group_name': obj.study_group.group_name,
+                'group_type': obj.study_group.group_type,
+            } if obj.study_group else None,
             'host': {
                 'id': obj.host.id,
                 'username': obj.host.username
@@ -111,3 +141,4 @@ class CalendarEventSerializer(serializers.ModelSerializer):
                 'username': obj.participant.username
             } if obj.participant else None
         }
+

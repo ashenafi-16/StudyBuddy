@@ -15,10 +15,18 @@ class StudySession(models.Model):
         CANCELLED = 'cancelled', 'Cancelled'
 
     title = models.CharField(max_length=200)
-    subject = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    
+    # Link to study group (replaces free-text subject)
+    study_group = models.ForeignKey(
+        'group.StudyGroup',
+        on_delete=models.CASCADE,
+        related_name='study_sessions',
+        null=True,
+        blank=True
+    )
     
     # Participants
     host = models.ForeignKey(
@@ -54,16 +62,24 @@ class StudySession(models.Model):
         return f"{self.title} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
 
     @property
+    def subject(self):
+        """Backward-compatible subject derived from study group name."""
+        return self.study_group.group_name if self.study_group else ''
+
+    @property
     def meeting_url(self):
         """Generate Jitsi meeting URL."""
         return f"https://meet.jit.si/StudyBuddy_{self.meeting_id}"
 
     @property
     def is_active(self):
-        """Check if meeting can be joined (within 5 minutes of start time)."""
+        """Check if session is in progress or within the join window."""
         from django.utils import timezone
         from datetime import timedelta
         
+        if self.status == self.SessionStatus.IN_PROGRESS:
+            return True
+        
         now = timezone.now()
         start_window = self.start_time - timedelta(minutes=5)
-        return start_window <= now <= self.end_time
+        return start_window <= now <= self.end_time and self.status == self.SessionStatus.SCHEDULED

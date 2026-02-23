@@ -21,6 +21,12 @@ export interface Message {
   timestamp: string;
   sender: User;
   conversation_id?: number;
+  reply_to?: number | null;
+  reply_to_info?: {
+    message_id: number;
+    sender: string;
+    content: string;
+  } | null;
 }
 
 export interface Contact {
@@ -53,6 +59,7 @@ interface ChatStoreState {
   selectedUser: Contact | null;
   socket: WebSocket | null;
 
+  replyToMessage: Message | null;
   
   isUsersLoading: boolean;
   isMessagesLoading: boolean;
@@ -68,6 +75,8 @@ interface ChatStoreState {
   setActiveTab: (tab: string) => void;
   setSelectedUser: (user: Contact | null) => void;
   sendTyping: () => void;
+  setReplyTo: (message: Message | null) => void;
+  clearReplyTo: () => void;
 
   getAllGroupContacts: () => Promise<void>;
   getAllIndividualContacts: () => Promise<void>;
@@ -88,6 +97,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   onlineUsers: new Set(),
   typingUsers: new Set(),
   socket: null,
+  replyToMessage: null,
 
   connectPresenceSocket: (token: string) => {
     if (!token) return;
@@ -178,9 +188,12 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setReplyTo: (message) => set({ replyToMessage: message }),
+  clearReplyTo: () => set({ replyToMessage: null }),
   setSelectedUser: (user) => {
     set(state => ({
-      selectedUser: user, 
+      selectedUser: user,
+      replyToMessage: null,
       chats: state.chats.map(chat => 
         chat.id === user?.id ? {...chat, unread_count: 0}: chat
       )
@@ -247,16 +260,22 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   },
 
   sendMessage: async ({ text = "", file, currentUser }) => {
-    const { selectedUser } = get();
+    const { selectedUser, replyToMessage } = get();
     if (!selectedUser) {
       toast.error("No conversation selected");
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
+
     try {
       const formData = new FormData();
       formData.append("conversation_id", String(selectedUser.id));
       formData.append("content", text);
+
+      if (replyToMessage) {
+        formData.append("reply_to", String(replyToMessage.id));
+      }
 
       let messageType: "text" | "file" | "image" = "text";
       if (file) {
@@ -269,24 +288,44 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
       // Optimistic message
       const optimisticMessage: Message = {
-        id: `temp-${Date.now()}`,
+        id: tempId,
         content: text,
         message_type: messageType,
         file_attachment: file ? URL.createObjectURL(file) : null,
         timestamp: new Date().toISOString(),
-        sender: currentUser, // use currentUser here
+        sender: currentUser,
+        reply_to: replyToMessage ? Number(replyToMessage.id) : null,
+        reply_to_info: replyToMessage ? {
+          message_id: Number(replyToMessage.id),
+          sender: replyToMessage.sender?.full_name || replyToMessage.sender?.email || 'Unknown',
+          content: replyToMessage.content?.substring(0, 50) || '',
+        } : null,
       };
       set(state => ({
         messages: [...state.messages, optimisticMessage],
+        replyToMessage: null,
       }));
 
-      // Send to backend
-      await api.post("/messages/", formData, {
+      // Send to backend and replace optimistic message with real one
+      const res = await api.post("/messages/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      // Replace the optimistic message with the server response
+      if (res.data) {
+        set(state => ({
+          messages: state.messages.map(m =>
+            m.id === tempId ? res.data : m
+          ),
+        }));
+      }
+
     } catch (err: any) {
       console.error(err);
+      // Remove the optimistic message on failure
+      set(state => ({
+        messages: state.messages.filter(m => m.id !== tempId),
+      }));
       toast.error(err?.response?.data?.message || "Failed to send message");
     }
   },
@@ -295,10 +334,23 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   // WebSocket message handler - called when receiving real-time messages
   handleWebSocketMessage: (message) => {
     set((state) => {
+      // Skip if message with this ID already exists
       if (state.messages.some((m) => m.id === message.id)) return state;
 
+      // Also remove any lingering optimistic (temp) messages that match
+      // this real message (same sender + same content = it's the echo)
+      const filteredMessages = state.messages.filter((m) => {
+        if (typeof m.id === 'string' && String(m.id).startsWith('temp-')) {
+          // Remove if same sender and same content
+          if (m.sender?.id === message.sender?.id && m.content === message.content) {
+            return false;
+          }
+        }
+        return true;
+      });
+
       return {
-        messages: [...state.messages, message],
+        messages: [...filteredMessages, message],
         chats: state.chats.map((chat) =>
           chat.id === message.conversation_id &&
           state.selectedUser?.id !== chat.id

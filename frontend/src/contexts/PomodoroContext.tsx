@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import { type PomodoroSession } from '../api/pomodoroApi';
+import { fetchPomodoroByGroup, type PomodoroSession } from '../api/pomodoroApi';
+
+const STORAGE_KEY = 'pomodoro_active_group';
 
 interface PomodoroContextType {
     activeSession: PomodoroSession | null;
@@ -15,13 +17,53 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
     const [displayTime, setDisplayTime] = useState(0);
     const tickIntervalRef = useRef<number | null>(null);
+    const hasRestoredRef = useRef(false);
 
     const setActiveSession = (session: PomodoroSession | null, groupName?: string | null) => {
         setActiveSessionState(session);
         if (groupName !== undefined) {
             setActiveGroupName(groupName);
         }
+
+        // Persist active group info to localStorage
+        if (session && session.state !== 'idle') {
+            const resolvedGroupName = groupName !== undefined ? groupName : activeGroupName;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                groupId: session.group,
+                groupName: resolvedGroupName,
+            }));
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
+        }
     };
+
+    // Restore session from localStorage on mount
+    useEffect(() => {
+        if (hasRestoredRef.current) return;
+        hasRestoredRef.current = true;
+
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+
+        try {
+            const { groupId, groupName } = JSON.parse(stored);
+            if (!groupId) return;
+
+            fetchPomodoroByGroup(groupId).then((session) => {
+                if (session && session.state !== 'idle') {
+                    setActiveSessionState(session);
+                    setActiveGroupName(groupName || session.group_name || null);
+                } else {
+                    // Session is no longer active, clean up
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            }).catch(() => {
+                localStorage.removeItem(STORAGE_KEY);
+            });
+        } catch {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }, []);
 
     // Timer countdown logic
     useEffect(() => {

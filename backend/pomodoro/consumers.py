@@ -732,17 +732,19 @@ class PomodoroConsumer(AsyncWebsocketConsumer):
         settings = user_session.get_settings()
         remaining = self._calculate_user_remaining_seconds(user_session, settings)
         
-        # Get group session for sync_mode and is_creator check
+        # Get group session for sync_mode and is_creator check AND ID
         try:
             group_session = PomodoroSession.objects.get(group_id=self.group_id)
             sync_mode = group_session.sync_mode
             is_creator = self._check_is_creator_sync(group_session)
+            shared_session_id = group_session.id # CRITICAL: Use shared ID
         except PomodoroSession.DoesNotExist:
             sync_mode = 'flexible'
             is_creator = False
+            shared_session_id = user_session.id # Fallback if drastically broken
         
         return {
-            'id': user_session.id,
+            'id': shared_session_id, # CRITICAL: Return Shared Session ID
             'group': user_session.group_id,
             'phase': user_session.phase,
             'state': user_session.state,

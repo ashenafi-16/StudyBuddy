@@ -26,6 +26,14 @@ export const fetchGroups = async (): Promise<StudyGroup[]> => {
 };
 
 /**
+ * Fetch only groups where user is a member
+ */
+export const fetchMyGroups = async (): Promise<StudyGroup[]> => {
+    const response = await api.get('/groups/my-groups/');
+    return response.data;
+};
+
+/**
  * Fetch a single group by ID with detailed information
  */
 export const fetchGroupDetail = async (id: number): Promise<StudyGroupDetail> => {

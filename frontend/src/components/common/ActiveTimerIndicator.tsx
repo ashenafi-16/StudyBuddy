@@ -66,7 +66,12 @@ export default function ActiveTimerIndicator() {
 
     return (
         <button
-            onClick={() => navigate('/pomodoro')}
+            onClick={() => {
+                if (activeSession?.group) {
+                    localStorage.setItem('pomodoro_selected_group', String(activeSession.group));
+                }
+                navigate('/pomodoro');
+            }}
             className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-full
                 ${colors.bg} ${colors.border} border

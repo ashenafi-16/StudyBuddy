@@ -3,10 +3,10 @@ from .models import StudyActivity, StudyStreak, UserAchievement
 
 
 class StudyActivitySerializer(serializers.ModelSerializer):
+    level = serializers.ReadOnlyField(source='activity_level')
     class Meta:
         model = StudyActivity
-        fields = ['id', 'date', 'duration_minutes']
-
+        fields = ['id', 'date', 'duration_minutes', 'level']
 
 class StudyStreakSerializer(serializers.ModelSerializer):
     class Meta:

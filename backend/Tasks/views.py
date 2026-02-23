@@ -15,7 +15,7 @@ from datetime import timedelta
 import logging
 from django.db.models.functions import Now
 
-from .models import Task, StudyResource,StudySession
+from .models import Task, StudyResource
 from .serializers import (
     TaskBasicSerializer, 
     TaskCreateSerializer, 
@@ -24,9 +24,6 @@ from .serializers import (
     StudyResourceCreateSerializer,
     StudyResourceSerializer,
     StudyResourceDownloadSerializer,
-    StudySessionCreateSerializer,
-    StudySessionSerializer,
-    StudySessionDetailSerializer
     
 )
 from Notifications.models import Notification
@@ -40,79 +37,6 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-class StudySessionViewSet(viewsets.ModelViewSet):
-    queryset = StudySession.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return StudySession.objects.filter(
-            user=user
-        ).select_related("group").order_by("-start_time")
-
-    def get_serializer_class(self):
-        if self.action == "create":
-            return StudySessionCreateSerializer
-        elif self.action in ["update", "partial_update"]:
-            return StudySessionCreateSerializer
-        elif self.action == "retrieve":
-            return StudySessionDetailSerializer
-        return StudySessionSerializer
-
-    def perform_create(self, serializer):
-        start_time = timezone.now()
-        serializer.save(user=self.request.user, start_time=start_time)
-
-    @action(detail=True, methods=['post'])
-    def end_session(self, request, pk=None):
-        """ Stop session and calculate duration """
-        session = self.get_object()
-
-        if session.end_time:
-            return Response({"error": "Session already ended"}, status=status.HTTP_400_BAD_REQUEST)
-
-        session.end_time = timezone.now()
-        session.save()
-
-        serializer = self.get_serializer(session)
-        return Response({
-            "message": "Session ended successfully",
-            "session": serializer.data
-        })
-
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        """ Get current active session (if any) """
-        session = StudySession.objects.filter(
-            user=request.user, end_time__isnull=True
-        ).first()
-
-        if not session:
-            return Response({"active_session": None})
-
-        serializer = self.get_serializer(session)
-        return Response({"active_session": serializer.data})
-
-    @action(detail=False, methods=['get'])
-    def statistics(self, request):
-        """ Dashboard analytics: total hours studied, streak, etc. """
-        user = request.user
-        now = timezone.now()
-        week_ago = now - timedelta(days=7)
-
-        sessions = StudySession.objects.filter(user=user)
-
-        stats = {
-            "total_sessions": sessions.count(),
-            "total_minutes": sessions.aggregate(
-                total=Sum("duration")
-            )["total"] or 0,
-            "weekly_minutes": sessions.filter(start_time__gte=week_ago).aggregate(
-                total=Sum("duration")
-            )["total"] or 0,
-            "active_sessions": sessions.filter(end_time__isnull=True).count(),
-        }
-        return Response(stats)
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()

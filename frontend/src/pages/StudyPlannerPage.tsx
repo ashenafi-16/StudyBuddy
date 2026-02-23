@@ -3,12 +3,11 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Calendar, Plus, Video, Clock, Users, Sparkles, Lock } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Calendar, Plus, Video, Clock, Users } from 'lucide-react';
 import { Loading, ErrorMessage } from '../components/common/LoadingError';
-import { useAuth } from '../contexts/AuthContext';
 import SessionModal from '../components/planner/SessionModal';
 import '../styles/fullcalendar.css';
+
 import {
     fetchCalendarEvents,
     fetchUpcomingSessions,
@@ -24,7 +23,6 @@ export default function StudyPlannerPage() {
     const [showModal, setShowModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-    const { isPremium } = useAuth();
 
     useEffect(() => {
         loadData();
@@ -93,24 +91,6 @@ export default function StudyPlannerPage() {
                     </div>
                     <div className="flex gap-3">
                         <button
-                            onClick={() => {
-                                if (!isPremium) {
-                                    toast.error("Premium subscription required for AI Study Planning");
-                                    return;
-                                }
-                                toast.success("AI is analyzing your schedule...");
-                            }}
-                            className={`flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white rounded-xl transition-all shadow-lg shadow-emerald-500/25 font-medium relative ${!isPremium ? 'opacity-75' : ''}`}
-                        >
-                            <Sparkles size={20} />
-                            Generate AI Plan
-                            {!isPremium && (
-                                <div className="absolute -top-1 -right-1 bg-amber-500 text-slate-900 rounded-full p-0.5">
-                                    <Lock size={10} strokeWidth={3} />
-                                </div>
-                            )}
-                        </button>
-                        <button
                             onClick={() => { setSelectedDate(new Date()); setShowModal(true); }}
                             className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-blue-500/25 font-medium"
                         >
@@ -157,20 +137,44 @@ export default function StudyPlannerPage() {
                                     {upcomingSessions.map((session) => (
                                         <div
                                             key={session.id}
-                                            className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/30 hover:border-slate-600 transition-all"
+                                            className={`p-4 bg-slate-800/50 rounded-xl border transition-all ${session.status === 'in_progress'
+                                                ? 'border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                                                : 'border-slate-700/30 hover:border-slate-600'
+                                                }`}
                                         >
-                                            <h4 className="font-semibold text-white text-sm mb-1">{session.title}</h4>
-                                            <p className="text-xs text-slate-400 mb-2">{session.subject}</p>
+                                            <div className="flex items-start justify-between mb-1">
+                                                <h4 className="font-semibold text-white text-sm">{session.title}</h4>
+                                                {session.status === 'in_progress' && (
+                                                    <span className="relative flex h-3 w-3 ml-2 mt-0.5">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {session.study_group && (
+                                                <p className="text-xs text-blue-400 mb-1 flex items-center gap-1">
+                                                    <Users size={10} />
+                                                    {session.study_group.group_name}
+                                                </p>
+                                            )}
                                             <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
                                                 <Clock size={12} />
                                                 {new Date(session.start_time).toLocaleDateString()} at{' '}
                                                 {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
 
-                                            {session.is_active ? (
+                                            {session.status === 'in_progress' ? (
                                                 <button
                                                     onClick={() => handleJoinMeeting(session.meeting_url)}
-                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all animate-pulse"
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all"
+                                                >
+                                                    <Video size={14} />
+                                                    Join Meeting
+                                                </button>
+                                            ) : session.is_active ? (
+                                                <button
+                                                    onClick={() => handleJoinMeeting(session.meeting_url)}
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600/80 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all"
                                                 >
                                                     <Video size={14} />
                                                     Join Meeting

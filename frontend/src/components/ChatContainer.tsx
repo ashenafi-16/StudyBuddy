@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useWebSocket } from "../hooks/useWebSocket";
@@ -6,15 +6,18 @@ import ChatHeader from "./ChatHeader";
 import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
+import { Reply, CornerUpLeft } from "lucide-react";
 
 interface ChatContainerProps {
   onBackClick?: () => void;
 }
 
 function ChatContainer({ onBackClick }: ChatContainerProps) {
-  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage } =
+  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo } =
     useChatStore();
   const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<number | string | null>(null);
 
   // Connect to WebSocket for real-time messages
   useWebSocket({
@@ -28,106 +31,190 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
     }
   }, [selectedUser, getMessageByConvId]);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const isGroup = !!selectedUser?.group_name;
+
+  // Find the replied-to message content
+  const getReplyInfo = (msg: any) => {
+    if (msg.reply_to_info) return msg.reply_to_info;
+    if (msg.reply_to) {
+      const replied = messages.find(m => m.id === msg.reply_to);
+      if (replied) {
+        return {
+          message_id: replied.id,
+          sender: replied.sender?.full_name || replied.sender?.email || 'Unknown',
+          content: replied.content?.substring(0, 60) || '',
+        };
+      }
+    }
+    return null;
+  };
+
   return (
-    <div className="flex-1 flex flex-col bg-[#0b0f1a] relative h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[#0d1117] relative h-full overflow-hidden">
       <ChatHeader onBackClick={onBackClick} />
 
-      {/* Messages Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-8 custom-scrollbar">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 custom-scrollbar">
         {isMessagesLoading ? (
           <MessagesLoadingSkeleton />
         ) : (!messages || messages.length === 0) ? (
           <div className="flex-1 flex items-center justify-center h-full min-h-[300px]">
-            <NoChatHistoryPlaceholder />
+            <NoChatHistoryPlaceholder name={selectedUser?.group_name || selectedUser?.full_name || 'this chat'} />
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6">
-            {messages.map((msg) => {
+          <div className="max-w-3xl mx-auto space-y-1">
+            {messages.map((msg, index) => {
               const isOwn = msg.sender?.id === user?.id;
+              const prevMsg = index > 0 ? messages[index - 1] : null;
+              const isSameSenderAsPrev = prevMsg && prevMsg.sender?.id === msg.sender?.id;
+              const showSenderName = isGroup && !isOwn && !isSameSenderAsPrev;
+              const showAvatar = !isOwn && !isSameSenderAsPrev;
+              const isShort = msg.content && msg.content.length < 30 && msg.message_type === 'text';
+              const isHovered = hoveredMessageId === msg.id;
+              const replyInfo = getReplyInfo(msg);
 
               return (
                 <div
                   key={msg.id}
-                  className={`flex flex-col ${isOwn ? "items-end" : "items-start"} w-full animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} ${!isSameSenderAsPrev ? 'mt-4' : 'mt-0.5'} group/msg relative`}
+                  onMouseEnter={() => setHoveredMessageId(msg.id)}
+                  onMouseLeave={() => setHoveredMessageId(null)}
                 >
-                  <div
-                    className={`relative min-w-[60px] max-w-[80%] sm:max-w-[70%] md:max-w-[65%] p-3 sm:p-4 rounded-2xl shadow-sm transition-all duration-300 ${isOwn
-                      ? "bg-indigo-600 text-white rounded-tr-sm"
-                      : "bg-slate-800/80 backdrop-blur-sm text-slate-100 rounded-tl-sm border border-white/5"
-                      }`}
-                  >
-                    {/* Image Message */}
-                    {msg.message_type === "image" && msg.file_attachment && (
-                      <div className="mb-2 sm:mb-3 overflow-hidden rounded-xl border border-white/10 shadow-lg">
-                        <img
-                          src={msg.file_attachment}
-                          alt="shared"
-                          className="max-h-[300px] sm:max-h-[400px] w-full object-cover cursor-pointer hover:opacity-90 transition-opacity duration-300"
-                        />
-                      </div>
-                    )}
-
-                    {/* File Message */}
-                    {msg.message_type === "file" && msg.file_attachment && (
-                      <div className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl mb-2 sm:mb-3 border ${isOwn ? 'bg-black/10 border-white/10' : 'bg-slate-900/50 border-white/5'
-                        }`}>
-                        <div className={`p-2 rounded-lg flex items-center justify-center ${isOwn ? 'bg-white/10 text-white' : 'bg-indigo-500/20 text-indigo-400'
-                          }`}>
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
+                  {/* Avatar for other users */}
+                  {!isOwn && (
+                    <div className="w-8 flex-shrink-0 mr-2 self-end">
+                      {showAvatar ? (
+                        <div className="w-7 h-7 rounded-full overflow-hidden">
+                          <img
+                            src={msg.sender?.profile_pic_url || "/avatar.png"}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         </div>
+                      ) : null}
+                    </div>
+                  )}
 
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-bold truncate leading-tight">
-                            {msg.file_info?.name || msg.file_attachment.split('/').pop() || 'Document'}
-                          </p>
-                          <div className="flex items-center gap-2 sm:gap-3 mt-1">
-                            <span className="text-[9px] sm:text-[10px] opacity-70 font-mono font-bold uppercase tracking-wider">
-                              {msg.file_info?.size ? `${(msg.file_info.size / 1024).toFixed(1)} KB` : 'PDF'}
-                            </span>
-                            <a
-                              href={msg.file_attachment}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] underline underline-offset-4 hover:opacity-80 transition-opacity ${isOwn ? 'text-white' : 'text-indigo-400'
-                                }`}
-                            >
-                              Open
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  {/* Reply button - positioned outside the bubble */}
+                  {isOwn && isHovered && (
+                    <button
+                      onClick={() => setReplyTo(msg)}
+                      className="self-center mr-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+                      title="Reply"
+                    >
+                      <CornerUpLeft size={14} />
+                    </button>
+                  )}
 
-                    {/* Text Message */}
-                    {msg.message_type === "text" && (
-                      <p className="text-[14px] sm:text-[15px] leading-relaxed font-normal whitespace-pre-wrap break-words">
-                        {msg.content}
-                      </p>
-                    )}
-
-                    {/* Timestamp */}
-                    <div className={`flex items-center gap-2 mt-1.5 sm:mt-2 transition-opacity ${isOwn ? 'justify-end text-white/50' : 'justify-start text-slate-500'
-                      }`}>
-                      <span className="text-[9px] sm:text-[10px] font-semibold tracking-wide">
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                  <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} ${isShort ? '' : 'max-w-[85%] sm:max-w-[75%] md:max-w-[65%]'}`}>
+                    {/* Sender name in group chats */}
+                    {showSenderName && (
+                      <span className="text-[11px] font-medium text-sky-400/70 mb-1 ml-1">
+                        {msg.sender?.full_name || 'Unknown'}
                       </span>
-                      {isOwn && (
-                        <div className="flex items-center">
-                          <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
+                    )}
+
+                    {/* Reply reference banner */}
+                    {replyInfo && (
+                      <div className={`flex items-center gap-1.5 mb-0.5 max-w-full ${isOwn ? 'mr-1' : 'ml-1'}`}>
+                        <Reply size={11} className="text-slate-500 flex-shrink-0 rotate-180" />
+                        <span className="text-[11px] text-slate-500 truncate">
+                          <span className="font-medium text-slate-400">{replyInfo.sender}</span>
+                          {': '}
+                          {replyInfo.content}
+                        </span>
+                      </div>
+                    )}
+
+                    <div
+                      className={`relative px-3.5 py-2.5 ${isOwn
+                        ? `bg-[#1a6b4a] text-white ${!isSameSenderAsPrev ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-br-md'}`
+                        : `bg-[#1e2533] text-slate-100 ${!isSameSenderAsPrev ? 'rounded-2xl rounded-bl-md' : 'rounded-2xl rounded-bl-md'}`
+                        }`}
+                    >
+                      {/* Image Message */}
+                      {msg.message_type === "image" && msg.file_attachment && (
+                        <div className="mb-2 overflow-hidden rounded-xl">
+                          <img
+                            src={msg.file_attachment}
+                            alt="shared"
+                            className="max-h-[300px] sm:max-h-[360px] w-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          />
                         </div>
                       )}
+
+                      {/* File Message */}
+                      {msg.message_type === "file" && msg.file_attachment && (
+                        <div className={`flex items-center gap-3 p-2.5 rounded-xl mb-2 ${isOwn ? 'bg-black/15' : 'bg-white/[0.03] border border-white/[0.04]'}`}>
+                          <div className={`p-2 rounded-lg ${isOwn ? 'bg-white/10' : 'bg-sky-500/15'}`}>
+                            <svg className="w-4 h-4 text-current opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-medium truncate">
+                              {msg.file_info?.name || msg.file_attachment.split('/').pop() || 'Document'}
+                            </p>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              <span className="text-[10px] opacity-60 font-medium">
+                                {msg.file_info?.size ? `${(msg.file_info.size / 1024).toFixed(1)} KB` : 'File'}
+                              </span>
+                              <a
+                                href={msg.file_attachment}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-[10px] font-semibold underline underline-offset-2 hover:opacity-80 ${isOwn ? 'text-white/80' : 'text-sky-400'}`}
+                              >
+                                Open
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Text Message */}
+                      {msg.message_type === "text" && (
+                        <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
+                          {msg.content}
+                        </p>
+                      )}
+
+                      {/* Timestamp */}
+                      <div className={`flex items-center gap-1.5 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        <span className={`text-[10px] font-medium ${isOwn ? 'text-white/40' : 'text-slate-500'}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {isOwn && (
+                          <svg className="w-3.5 h-3.5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Reply button - positioned outside the bubble for non-own */}
+                  {!isOwn && isHovered && (
+                    <button
+                      onClick={() => setReplyTo(msg)}
+                      className="self-center ml-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+                      title="Reply"
+                    >
+                      <CornerUpLeft size={14} />
+                    </button>
+                  )}
                 </div>
               );
             })}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>

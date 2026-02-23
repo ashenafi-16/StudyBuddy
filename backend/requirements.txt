@@ -11,4 +11,13 @@ redis==7.0.1
 django-redis==5.4.0
 sqlparse==0.5.3
 cryptography
-
+python-dotenv
+psycopg2-binary
+daphne
+django-cors-headers
+django-allauth
+django-celery-results
+cloudinary
+django-cloudinary-storage
+drf-spectacular
+gunicorn

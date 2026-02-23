@@ -13,6 +13,17 @@ class StudyActivity(models.Model):
         unique_together = ('user', 'date')
         ordering = ['-date']
     
+    @property
+    def activity_level(self):
+        # Returns an intensity level based on duration
+        if self.duration_minutes < 10:
+            return 0
+        elif 10 <= self.duration_minutes < 30:
+            return 1
+        elif 30 <= self.duration_minutes < 50:
+            return 2
+        else:
+            return 3
     
     def __str__(self):
         return f"{self.user.username} studied {self.duration_minutes}m on {self.date}"

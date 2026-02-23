@@ -18,11 +18,13 @@ class StudySessionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        """Return sessions where user is host or participant."""
+        """Return sessions where user is host, participant, or member of the linked study group."""
         user = self.request.user
         return StudySession.objects.filter(
-            Q(host=user) | Q(participant=user)
-        ).select_related('host', 'participant')
+            Q(host=user) | 
+            Q(participant=user) |
+            Q(study_group__members__user=user, study_group__members__is_active=True)
+        ).select_related('host', 'participant', 'study_group').distinct()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -35,7 +37,6 @@ class StudySessionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def calendar(self, request):
         """Return sessions in FullCalendar event format."""
-        # Get date range from query params
         start = request.query_params.get('start')
         end = request.query_params.get('end')
         
@@ -58,10 +59,33 @@ class StudySessionViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(
             start_time__gte=now,
             start_time__lte=week_later,
-            status='scheduled'
+            status__in=['scheduled', 'in_progress']
         )[:5]
         
         serializer = StudySessionSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def start(self, request, pk=None):
+        """Start a study session — sets status to in_progress and returns meeting URL."""
+        session = self.get_object()
+        
+        if session.host != request.user:
+            return Response(
+                {'error': 'Only the host can start the session.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if session.status != 'scheduled':
+            return Response(
+                {'error': f'Cannot start a session with status "{session.status}".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        session.status = 'in_progress'
+        session.save()
+        
+        serializer = StudySessionSerializer(session)
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
@@ -88,3 +112,4 @@ class StudySessionViewSet(viewsets.ModelViewSet):
         session.save()
         
         return Response({'status': 'Session marked as completed.'})
+

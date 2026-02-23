@@ -1,6 +1,14 @@
-import axios from 'axios';
+import api from './api';
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+// ============================================
+// TYPES
+// ============================================
+
+export interface StudyGroupMinimal {
+    id: number;
+    group_name: string;
+    group_type: string;
+}
 
 export interface StudySession {
     id: number;
@@ -25,6 +33,7 @@ export interface StudySession {
         last_name: string;
         profile_pic_url: string | null;
     } | null;
+    study_group: StudyGroupMinimal | null;
     meeting_id: string;
     meeting_url: string;
     is_active: boolean;
@@ -46,6 +55,7 @@ export interface CalendarEvent {
         meeting_url: string;
         is_active: boolean;
         status: string;
+        study_group: StudyGroupMinimal | null;
         host: { id: number; username: string };
         participant: { id: number; username: string } | null;
     };
@@ -53,72 +63,64 @@ export interface CalendarEvent {
 
 export interface CreateSessionData {
     title: string;
-    subject: string;
     description?: string;
     start_time: string;
     end_time: string;
+    study_group_id?: number | null;
     participant_id?: number | null;
 }
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
+// ============================================
+// API FUNCTIONS
+// ============================================
 
 export const fetchCalendarEvents = async (start?: string, end?: string): Promise<CalendarEvent[]> => {
     const params = new URLSearchParams();
     if (start) params.append('start', start);
     if (end) params.append('end', end);
 
-    const response = await axios.get(`${API_BASE}/sessions/calendar/`, {
-        headers: getAuthHeader(),
-        params
-    });
+    const response = await api.get('/sessions/calendar/', { params });
     return response.data;
 };
 
 export const fetchSessions = async (): Promise<StudySession[]> => {
-    const response = await axios.get(`${API_BASE}/sessions/`, {
-        headers: getAuthHeader()
-    });
+    const response = await api.get('/sessions/');
     return response.data;
 };
 
 export const fetchUpcomingSessions = async (): Promise<StudySession[]> => {
-    const response = await axios.get(`${API_BASE}/sessions/upcoming/`, {
-        headers: getAuthHeader()
-    });
+    const response = await api.get('/sessions/upcoming/');
     return response.data;
 };
 
 export const createSession = async (data: CreateSessionData): Promise<StudySession> => {
-    const response = await axios.post(`${API_BASE}/sessions/`, data, {
-        headers: getAuthHeader()
-    });
+    const response = await api.post('/sessions/', data);
     return response.data;
 };
 
 export const updateSession = async (id: number, data: Partial<CreateSessionData>): Promise<StudySession> => {
-    const response = await axios.patch(`${API_BASE}/sessions/${id}/`, data, {
-        headers: getAuthHeader()
-    });
+    const response = await api.patch(`/sessions/${id}/`, data);
     return response.data;
 };
 
 export const deleteSession = async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE}/sessions/${id}/`, {
-        headers: getAuthHeader()
-    });
+    await api.delete(`/sessions/${id}/`);
 };
 
 export const cancelSession = async (id: number): Promise<void> => {
-    await axios.post(`${API_BASE}/sessions/${id}/cancel/`, {}, {
-        headers: getAuthHeader()
-    });
+    await api.post(`/sessions/${id}/cancel/`, {});
 };
 
 export const completeSession = async (id: number): Promise<void> => {
-    await axios.post(`${API_BASE}/sessions/${id}/complete/`, {}, {
-        headers: getAuthHeader()
-    });
+    await api.post(`/sessions/${id}/complete/`, {});
+};
+
+export const startSession = async (id: number): Promise<StudySession> => {
+    const response = await api.post(`/sessions/${id}/start/`, {});
+    return response.data;
+};
+
+export const fetchMyGroups = async (): Promise<StudyGroupMinimal[]> => {
+    const response = await api.get('/groups/my-groups/');
+    return response.data;
 };

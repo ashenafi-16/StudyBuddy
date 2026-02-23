@@ -75,14 +75,3 @@ class StudyResource(models.Model):
         super().save(*args, **kwargs)
         
 
-class StudySession(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='study_sessions')
-    group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE, related_name='study_sessions', null=True, blank=True)
-    subject = models.CharField(max_length=200)
-    topic = models.CharField(max_length=255, blank=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField(blank=True, null=True)
-    duration = models.PositiveIntegerField(blank=True, null=True)  # in minutes
-
-    class Meta:
-        ordering = ['-start_time']

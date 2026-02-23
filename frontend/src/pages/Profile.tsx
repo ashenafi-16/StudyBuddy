@@ -209,7 +209,7 @@ export default function Profile() {
       const minutes = activityMap.get(dateStr) || 0;
 
       let level = 0;
-      if (minutes > 0) level = 1;
+      if (minutes >= 10) level = 1;
       if (minutes >= 30) level = 2;
       if (minutes >= 60) level = 3;
       if (minutes >= 120) level = 4;
@@ -232,13 +232,13 @@ export default function Profile() {
   }, [contributionData]);
 
   const getLevelColor = (level: number) => {
-    // GitHub-like green scale or "Green Button" style
+    // GitHub-like green scale
     switch (level) {
-      case 1: return "bg-green-900";
-      case 2: return "bg-green-700";
-      case 3: return "bg-green-500";
-      case 4: return "bg-green-400";
-      default: return "bg-slate-800/50";
+      case 1: return "bg-[#0e4429] border border-white/5"; // Dark green
+      case 2: return "bg-[#006d32] border border-white/5"; // Medium green
+      case 3: return "bg-[#26a641] border border-white/5"; // Bright green
+      case 4: return "bg-[#39d353] border border-white/5"; // Neon green
+      default: return "bg-[#161b22] border border-white/5"; // Dark empty state
     }
   };
 
@@ -464,11 +464,11 @@ export default function Profile() {
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <span>Less</span>
               <div className="flex gap-1">
-                <div className="w-4 h-4 rounded-sm bg-slate-800/50" />
-                <div className="w-4 h-4 rounded-sm bg-green-900" />
-                <div className="w-4 h-4 rounded-sm bg-green-700" />
-                <div className="w-4 h-4 rounded-sm bg-green-500" />
-                <div className="w-4 h-4 rounded-sm bg-green-400" />
+                <div className="w-3 h-3 rounded-sm bg-[#161b22] border border-white/5" />
+                <div className="w-3 h-3 rounded-sm bg-[#0e4429] border border-white/5" />
+                <div className="w-3 h-3 rounded-sm bg-[#006d32] border border-white/5" />
+                <div className="w-3 h-3 rounded-sm bg-[#26a641] border border-white/5" />
+                <div className="w-3 h-3 rounded-sm bg-[#39d353] border border-white/5" />
               </div>
               <span>More</span>
             </div>
@@ -567,20 +567,6 @@ export default function Profile() {
             )}
           </div>
         </div>
-
-        {/* Quick Links */}
-        <div className="mt-8 flex flex-wrap gap-3 justify-center">
-          <Link to="/groups" className="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition-all">
-            <Users size={16} className="text-blue-400" /> My Groups
-          </Link>
-          <Link to="/resources" className="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition-all">
-            <BookOpen size={16} className="text-purple-400" /> Resources
-          </Link>
-          <Link to="/pomodoro" className="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition-all">
-            <Clock size={16} className="text-red-400" /> Pomodoro
-          </Link>
-        </div>
-
       </div>
     </div>
   );

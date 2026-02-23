@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, StudyResource,StudySession
+from .models import Task, StudyResource
 from group.models import GroupMember
 from django.utils import timezone
 from accounts.serializers import UserBasicSerializer
@@ -102,22 +102,4 @@ class StudyResourceDownloadSerializer(serializers.ModelSerializer):
         model = StudyResource
         fields = ('id', 'title', 'file')
         read_only_fields = ('id', 'title', 'file')
-
-class StudySessionCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudySession
-        fields = ['id', 'subject', 'topic', 'group', 'start_time', 'end_time']
-
-class StudySessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudySession
-        fields = ['id', 'subject', 'topic', 'duration', 'start_time', 'end_time']
-
-class StudySessionDetailSerializer(serializers.ModelSerializer):
-    group_name = serializers.CharField(source='group.group_name', read_only=True)
-
-    class Meta:
-        model = StudySession
-        fields = ['id', 'subject', 'topic', 'group_name', 'duration', 'start_time', 'end_time']
-
 

@@ -75,6 +75,16 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You are not a member of this private group.")
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='my-groups')
+    def my_groups(self, request):
+        # Return groups where the current user is an active member.
+        groups = StudyGroup.objects.filter(
+            members__user=request.user,
+            members__is_active=True
+        ).distinct().order_by('-created_at')
+        serializer = StudyGroupListSerializer(groups, many=True, context={'request': request})
+        return Response(serializer.data)
     
     @action(detail=True, methods=['post'], url_path='join-via-link/(?P<token>[^/.]+)')
     def join_via_link(self, request, pk=None, token=None):
@@ -292,21 +302,28 @@ class GroupMemberViewSet(viewsets.ModelViewSet):
             raise ValidationError({"group_id": "Group does not exist."})
 
         # Check if current user (request.user) is admin/moderator in this group
-        current_user_membership = GroupMember.objects.filter(
-            user=self.request.user,
-            group=group,
-            role__in=['admin', 'moderator'],
-            is_active=True
-        ).first()
+        if group.group_type == 'private':
+            current_user_membership = GroupMember.objects.filter(
+                user=self.request.user,
+                group=group,
+                role__in=['admin', 'moderator'],
+                is_active=True
+            ).first()
+        else:
+            current_user_membership = GroupMember.objects.filter(
+                user=self.request.user,
+                group=group,
+                is_active=True
+            ).first()
 
         if not current_user_membership:
-            raise PermissionDenied("You don't have permission to add members to this group.")
+            raise PermissionDenied("You don't have permission to add members to this group........")
 
         # Pass group to serializer
         serializer.save(group=group)
 
     def destroy(self, request, *args, **kwargs):
-        """Remove a member from the group. Only admins/moderators can do this."""
+        # Remove a member from the group. Only admins/moderators can do this.
         member_to_remove = self.get_object()
         group = member_to_remove.group
 
