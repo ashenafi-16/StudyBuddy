@@ -15,7 +15,8 @@ class BaseConsumer(AsyncJsonWebsocketConsumer, OnlineTrackerMixin):
     async def connect(self):
         self.user = None
 
-        token = self._get_token()
+        # token = self._get_token()
+        token = self._get_token_from_multiple_sources()
         if not token:
             await self.close(code=4001)
             return
@@ -26,9 +27,12 @@ class BaseConsumer(AsyncJsonWebsocketConsumer, OnlineTrackerMixin):
             return
 
         await self.accept()
-
-        await self.mark_online()
-        await self.broadcast_presence("online")
+        
+        try:
+            await self.mark_online()
+            await self.broadcast_presence("online")
+        except Exception as e:
+            print(f"Warning: Failed to broadcast presence: {e}")
 
     async def disconnect(self, close_code):
         if not self.user:
@@ -61,10 +65,31 @@ class BaseConsumer(AsyncJsonWebsocketConsumer, OnlineTrackerMixin):
             return None
 
 
-    def _get_token(self):
+    # def _get_token(self):
+    #     qs = parse_qs(self.scope["query_string"].decode())
+    #     return qs.get("token", [None])[0]
+    
+    def _get_token_from_multiple_sources(self):
+        # Method 1: Query string
         qs = parse_qs(self.scope["query_string"].decode())
-        return qs.get("token", [None])[0]
-
+        token = qs.get("token", [None])[0]
+        if token:
+            return token
+            
+        # Method 2: Headers
+        headers = dict(self.scope.get("headers", []))
+        auth_header = headers.get(b"authorization", b"").decode()
+        if auth_header and auth_header.startswith("Bearer "):
+            return auth_header.split(" ")[1]
+            
+        # Method 3: Cookies
+        cookies = self.scope.get("cookies", {})
+        token = cookies.get("access_token")
+        if token:
+            return token
+        
+        return None
+    
     @database_sync_to_async
     def _get_user_conversations(self):
         return list(

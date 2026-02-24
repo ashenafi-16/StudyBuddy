@@ -24,7 +24,6 @@ class ChatConsumer(
         self.conversation_id = self.scope["url_route"]["kwargs"]["conversation_id"]
 
         try:
-
             self.conversation = await self.validate_conversation_access(
                 self.conversation_id,
                 self.user
@@ -80,12 +79,12 @@ class ChatConsumer(
             }
         )
 
-    # -------------------------
-    # Group event handlers
-    # -------------------------
 
     async def chat_message(self, event):
-        await self.send_json(event["message"])
+        await self.send_json({
+            "type": "chat.message",
+            "data": event["message"]
+        })
 
     async def presence_event(self, event):
         await self.send_json({
@@ -113,13 +112,23 @@ class ChatConsumer(
             else:
                 file_url = str(msg.file_attachment)
         
+        sender = msg.sender
+        profile_pic_url = None
+        if hasattr(sender, 'profile_pic') and sender.profile_pic:
+            try:
+                profile_pic_url = sender.profile_pic.url
+            except Exception:
+                profile_pic_url = None
+
         return {
             "id": msg.id,
             "conversation_id": msg.conversation.id,
             "sender": {
-                "id": msg.sender.id,
-                "email": msg.sender.email,
-                "full_name": msg.sender.full_name,
+                "id": sender.id,
+                "email": sender.email,
+                "full_name": sender.full_name,
+                "username": sender.username,
+                "profile_pic_url": profile_pic_url,
             },
             "sender_name": msg.sender.full_name or msg.sender.email,
             "message_type": msg.message_type,

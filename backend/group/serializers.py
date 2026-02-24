@@ -151,7 +151,20 @@ class GroupMemberCreateSerializer(serializers.ModelSerializer):
         if GroupMember.objects.filter(user=user, group=group, is_active=True).exists():
             raise serializers.ValidationError({"user_email": "User is already a member of this group."})
 
-        return GroupMember.objects.create(user=user, group=group)
+        member = GroupMember.objects.create(user=user, group=group)
+
+        # Ensure conversation exists and user is added for data consistency
+        from Message.models import Conversation, ConversationMember
+        conversation, _ = Conversation.objects.get_or_create(
+            group=group,
+            defaults={'type': 'group'}
+        )
+        ConversationMember.objects.get_or_create(
+            conversation=conversation,
+            user=user
+        )
+
+        return member
 
 
 class GroupMemberUpdateSerializer(serializers.ModelSerializer):

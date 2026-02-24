@@ -36,7 +36,7 @@ export const useWebSocket = ({
             ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-
+                    console.log('Raw message received:', data.data); // Debug log
                     // Handle different message types
                     switch (data.type) {
                         case 'presence':
@@ -47,12 +47,12 @@ export const useWebSocket = ({
                             onTypingIndicator?.(data.user_id, data.is_typing);
                             break;
 
-                        default:
-                            // Regular chat message
-                            if (data.id) {
-                                onMessageReceived?.(data);
+                        case 'chat.message': // Updated to match backend message format
+                            if (data.data && data.data.id) {
+                                onMessageReceived?.(data.data);
                             }
                             break;
+
                     }
                 } catch (error) {
                     console.error('Failed to parse WebSocket message:', error);

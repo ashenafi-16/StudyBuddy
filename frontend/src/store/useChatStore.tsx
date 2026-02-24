@@ -5,6 +5,7 @@ import api from "../services/api";
 export interface User {
   id: number;
   full_name?: string;
+  username?: string;
   email: string;
   profile_pic_url?: string;
 }
@@ -306,16 +307,21 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
         replyToMessage: null,
       }));
 
-      // Send to backend and replace optimistic message with real one
+      // Send to backend — the WebSocket broadcast will deliver the real
+      // message with full sender data and replace the optimistic one.
       const res = await api.post("/messages/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Replace the optimistic message with the server response
-      if (res.data) {
+      // If the WebSocket already replaced this temp message, do nothing.
+      // Otherwise, update the temp ID to the real server ID so the
+      // WebSocket duplicate check can find it.
+      if (res.data?.id) {
         set(state => ({
           messages: state.messages.map(m =>
-            m.id === tempId ? res.data : m
+            m.id === tempId
+              ? { ...m, id: res.data.id }
+              : m
           ),
         }));
       }
@@ -332,25 +338,35 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
 
 
   // WebSocket message handler - called when receiving real-time messages
-  handleWebSocketMessage: (message) => {
+  handleWebSocketMessage: (message: Message) => {
     set((state) => {
-      // Skip if message with this ID already exists
+      // Skip if message with this ID already exists (already replaced by HTTP or duplicate WS)
       if (state.messages.some((m) => m.id === message.id)) return state;
 
-      // Also remove any lingering optimistic (temp) messages that match
-      // this real message (same sender + same content = it's the echo)
-      const filteredMessages = state.messages.filter((m) => {
-        if (typeof m.id === 'string' && String(m.id).startsWith('temp-')) {
-          // Remove if same sender and same content
-          if (m.sender?.id === message.sender?.id && m.content === message.content) {
-            return false;
-          }
+      // Check if there's a matching temp message (optimistic) from the same sender
+      // Replace only the FIRST matching one to avoid losing messages on rapid sends
+      let replacedOne = false;
+      const updatedMessages = state.messages.map((m) => {
+        if (
+          !replacedOne &&
+          typeof m.id === 'string' &&
+          String(m.id).startsWith('temp-') &&
+          m.sender?.id === message.sender?.id &&
+          m.content === message.content
+        ) {
+          replacedOne = true;
+          return message; // Replace temp with the real message
         }
-        return true;
+        return m;
       });
 
+      // If no temp message was replaced, this is a message from another user — append it
+      if (!replacedOne) {
+        updatedMessages.push(message);
+      }
+
       return {
-        messages: [...filteredMessages, message],
+        messages: updatedMessages,
         chats: state.chats.map((chat) =>
           chat.id === message.conversation_id &&
           state.selectedUser?.id !== chat.id

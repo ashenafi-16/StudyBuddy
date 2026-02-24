@@ -43,6 +43,7 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
     if (msg.reply_to_info) return msg.reply_to_info;
     if (msg.reply_to) {
       const replied = messages.find(m => m.id === msg.reply_to);
+      console.log("replied username: ", replied)
       if (replied) {
         return {
           message_id: replied.id,
@@ -114,8 +115,8 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
                   <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"} ${isShort ? '' : 'max-w-[85%] sm:max-w-[75%] md:max-w-[65%]'}`}>
                     {/* Sender name in group chats */}
                     {showSenderName && (
-                      <span className="text-[11px] font-medium text-sky-400/70 mb-1 ml-1">
-                        {msg.sender?.full_name || 'Unknown'}
+                      <span className="block text-[11px] font-semibold text-sky-400 opacity-80 mb-1 ml-1">
+                        {msg.sender?.full_name || msg.sender?.username || msg.sender?.email || 'Unknown'}
                       </span>
                     )}
 
