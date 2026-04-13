@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
+from django.core.cache import cache
+from django.conf import settings
 
 from .models import StudyFile
 from .serializers import StudyFileSerializer
@@ -39,6 +41,9 @@ class StudyFileViewSet(viewsets.ModelViewSet):
         
         serializer.save(owner=self.request.user)
 
+        # Invalidate file list cache for this group
+        cache.delete(f'files_group_{group.id}')
+
     # Only owner can delete
     def destroy(self, request, *args, **kwargs):
         study_file = self.get_object()
@@ -48,6 +53,9 @@ class StudyFileViewSet(viewsets.ModelViewSet):
                 {"error": "Only the file owner can delete this file."},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        # Invalidate file list cache for this group
+        cache.delete(f'files_group_{study_file.group_id}')
 
         return super().destroy(request, *args, **kwargs)
 

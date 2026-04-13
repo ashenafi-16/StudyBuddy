@@ -33,11 +33,13 @@ function ChatPage() {
             if (activeTab === 'chats') {
                 // Search users by username
                 const res = await api.get(`/auth/users/search/?q=${encodeURIComponent(query)}`);
-                setSearchResults(res.data || []);
+                const data = res.data;
+                setSearchResults(Array.isArray(data) ? data : data?.results || []);
             } else {
                 // Search groups by group name
                 const res = await api.get(`/groups/search/?q=${encodeURIComponent(query)}`);
-                setSearchResults(res.data || []);
+                const data = res.data;
+                setSearchResults(Array.isArray(data) ? data : data?.results || []);
             }
         } catch {
             setSearchResults([]);
@@ -89,7 +91,7 @@ function ChatPage() {
 
     return (
         <div className="w-full h-full flex items-stretch">
-            <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0a0e1a]">
+            <div className="relative w-full h-full bg-[#0a0e1a]">
                 <div className="flex h-full w-full relative">
 
                     {/* MOBILE OVERLAY */}

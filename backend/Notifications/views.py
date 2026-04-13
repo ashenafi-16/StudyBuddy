@@ -14,7 +14,9 @@ class NotificationListView(generics.ListAPIView):
     pagination_class = pagination.PageNumberPagination
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        return Notification.objects.filter(
+            user=self.request.user
+        ).select_related('related_group').order_by('-created_at')
 
 class UnreadNotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
@@ -22,7 +24,9 @@ class UnreadNotificationListView(generics.ListAPIView):
     pagination_class = pagination.PageNumberPagination
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user, is_read=False)
+        return Notification.objects.filter(
+            user=self.request.user, is_read=False
+        ).select_related('related_group').order_by('-created_at')
 
 class NotificationMarkReadView(generics.UpdateAPIView):
     queryset = Notification.objects.all()
@@ -39,3 +43,4 @@ class NotificationMarkReadView(generics.UpdateAPIView):
         notification.save()
 
         return Response({"message": "Notification marked as read."})
+

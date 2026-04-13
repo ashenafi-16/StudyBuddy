@@ -147,22 +147,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (email: string, password: string, role: string, username: string) => {
     try {
-      const response = await authAPI.signup({
+      await authAPI.signup({
         email,
         password,
         role,
         username,
       });
 
-      localStorage.setItem("token", response.tokens.access);
-      localStorage.setItem("refresh_token", response.tokens.refresh);
-
-      const decodedUser = setUserFromToken(response.tokens.access);
-      if (!decodedUser) throw new Error("Token decode failed");
-
-      await loadProfile();
-
-      return { success: true };
+      // After successful signup, log the user in to get tokens
+      return await login(email, password);
     } catch (error: any) {
       return {
         success: false,

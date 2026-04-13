@@ -5,6 +5,7 @@ from django.db.models import Q, Count, Max
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import CursorPagination
 from django.contrib.auth import get_user_model
 
 from .models import Message, Conversation, ConversationMember
@@ -22,6 +23,12 @@ from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
+
+class MessageCursorPagination(CursorPagination):
+    """Cursor-based pagination for messages — efficient for large chat histories."""
+    page_size = 50
+    ordering = '-timestamp'
+    cursor_query_param = 'cursor'
 
 class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -160,6 +167,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     queryset = Message.objects.all()
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = MessageCursorPagination
 
     def get_serializer_class(self):
         return MessageCreateSerializer if self.action == "create" else ChatMessageSerializer
@@ -168,7 +176,9 @@ class MessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         conversation_id = self.request.query_params.get("conversation_id")
 
-        qs = Message.objects.filter(conversation__members__user=user)
+        qs = Message.objects.filter(
+            conversation__members__user=user
+        ).select_related('sender', 'conversation')
 
         if conversation_id:
             qs = qs.filter(conversation_id=conversation_id)

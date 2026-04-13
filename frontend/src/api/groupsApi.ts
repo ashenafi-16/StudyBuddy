@@ -22,7 +22,7 @@ export type { StudyGroup, StudyGroupDetail, GroupMember, GroupAnalytics };
  */
 export const fetchGroups = async (): Promise<StudyGroup[]> => {
     const response = await api.get('/groups/');
-    return response.data;
+    return response.data.results || response.data;
 };
 
 /**
@@ -71,7 +71,7 @@ export const searchGroups = async (query: string): Promise<StudyGroup[]> => {
     const response = await api.get('/groups/search/', {
         params: { q: query }
     });
-    return response.data;
+    return response.data.results || response.data;
 };
 
 // ============================================

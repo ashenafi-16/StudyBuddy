@@ -1,18 +1,8 @@
-# StudyBuddy — Docker Compose
-# Usage:
-#   cp .env.docker .env   # fill in real values
-#   docker-compose up --build
-
 services:
-  # PostgreSQL 
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-studybuddy}
-      POSTGRES_USER: ${POSTGRES_USER:-studybuddy}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studybuddy_secret}
+    env_file: .env.docker
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -23,7 +13,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -37,13 +26,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Django Backend (Daphne ASGI) ──────────
+  # Django Backend (Daphne ASGI) 
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
-    env_file: .env
+    env_file: .env.docker
     ports:
       - "8000:8000"
     depends_on:
@@ -60,13 +49,12 @@ services:
         daphne -b 0.0.0.0 -p 8000 studybuddy.asgi:application
       "
 
-  # ── Celery Worker ─────────────────────────
   celery:
     build:
       context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
-    env_file: .env
+    env_file: .env.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,7 +62,6 @@ services:
         condition: service_healthy
     command: celery -A studybuddy worker -l info
 
-  # ── Frontend (Nginx) ─────────────────────
   frontend:
     build:
       context: .
@@ -84,6 +71,8 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    volumes:
+      - static_files:/app/staticfiles:ro
 
 volumes:
   postgres_data:

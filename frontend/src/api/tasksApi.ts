@@ -1,4 +1,5 @@
 import api from './api';
+import { unwrapPaginated } from './pagination';
 
 export interface Task {
     id: number;
@@ -11,7 +12,7 @@ export interface Task {
 
 export const fetchTasks = async (): Promise<Task[]> => {
     const response = await api.get('/tasks/');
-    return response.data;
+    return unwrapPaginated<Task>(response.data);
 };
 
 export const createTask = async (data: Partial<Task>): Promise<Task> => {

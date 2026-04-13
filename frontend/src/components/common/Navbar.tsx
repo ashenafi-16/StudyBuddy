@@ -37,7 +37,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
     }
   }
   return (
-    <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-700 px-6 py-4 shadow-sm">
+    <nav className="bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-700 px-6 py-4 shadow-sm relative z-[80] overflow-visible">
       <div className="flex justify-between items-center">
         {/* Logo/Brand + Active Timer */}
         <div className="flex items-center gap-4">

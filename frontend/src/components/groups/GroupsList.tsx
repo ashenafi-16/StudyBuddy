@@ -40,7 +40,8 @@ export default function GroupsList({ onCreateClick }: GroupsListProps) {
     };
 
     const filterGroups = () => {
-        let filtered = [...groups];
+        const groupsArray = Array.isArray(groups) ? groups : [];
+        let filtered = [...groupsArray];
 
         // Apply filter type
         if (filterType === 'my') {

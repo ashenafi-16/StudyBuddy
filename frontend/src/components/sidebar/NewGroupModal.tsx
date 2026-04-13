@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Users } from 'lucide-react';
 import { createGroup } from '../../api/groupsApi'; // We have this!
-import { useNavigate } from 'react-router-dom';
+import type { GroupType } from '../../types/groups';
 
 interface NewGroupModalProps {
     isOpen: boolean;
@@ -10,10 +10,9 @@ interface NewGroupModalProps {
 }
 
 const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose, onCreate }) => {
-    const navigate = useNavigate();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [type, setType] = useState('study_buddy');
+    const [type, setType] = useState<GroupType>('study_buddy');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -28,7 +27,7 @@ const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose, onCreate
             await createGroup({
                 group_name: name,
                 group_description: description,
-                group_type: type,
+                group_type: type as GroupType,
                 max_members: 10, // default
                 is_public: true
             });
@@ -81,7 +80,7 @@ const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose, onCreate
                         <label className="block text-sm font-medium text-slate-300 mb-1">Type</label>
                         <select
                             value={type}
-                            onChange={(e) => setType(e.target.value)}
+                            onChange={(e) => setType(e.target.value as GroupType)}
                             className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-4 text-white focus:outline-none focus:border-emerald-500"
                         >
                             <option value="study_buddy">Study Buddy</option>

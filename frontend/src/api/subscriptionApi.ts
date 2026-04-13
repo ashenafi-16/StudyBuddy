@@ -1,4 +1,5 @@
 import api from './api';
+import { unwrapPaginated } from './pagination';
 
 export interface SubscriptionPlan {
     id: number;
@@ -33,7 +34,7 @@ export interface PaymentResponse {
 // Fetch all active subscription plans
 export const fetchSubscriptionPlans = async (): Promise<SubscriptionPlan[]> => {
     const response = await api.get('/subscriptions/plans/');
-    return response.data;
+    return unwrapPaginated<SubscriptionPlan>(response.data);
 };
 
 // Get current user's active subscriptions
@@ -45,7 +46,7 @@ export const fetchMySubscription = async (): Promise<{ has_subscription: boolean
 // Fetch user subscription history
 export const fetchSubscriptionHistory = async (): Promise<UserSubscription[]> => {
     const response = await api.get('/subscriptions/history/');
-    return response.data;
+    return unwrapPaginated<UserSubscription>(response.data);
 };
 
 // Initiate subscription payment

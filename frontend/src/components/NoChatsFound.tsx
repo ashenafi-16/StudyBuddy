@@ -1,7 +1,11 @@
 import { MessageCircleIcon } from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
 
-function NoChatsFound() {
+interface NoChatsFoundProps {
+  message?: string;
+}
+
+function NoChatsFound({ message }: NoChatsFoundProps) {
   const { setActiveTab } = useChatStore();
 
   return (
@@ -10,7 +14,7 @@ function NoChatsFound() {
         <MessageCircleIcon className="w-8 h-8 text-cyan-400" />
       </div>
       <div>
-        <h4 className="text-slate-200 font-medium mb-1">No conversations yet</h4>
+        <h4 className="text-slate-200 font-medium mb-1">{message || "No conversations yet"}</h4>
         <p className="text-slate-400 text-sm px-6">
           Start a new chat by selecting a contact from the contacts tab
         </p>

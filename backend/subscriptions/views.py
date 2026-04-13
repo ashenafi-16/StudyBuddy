@@ -10,6 +10,7 @@ import json
 import hmac
 import hashlib
 from django.conf import settings
+from django.core.cache import cache
 
 from .models import SubscriptionPlan, UserSubscription, Payment
 from .serializers import (
@@ -23,11 +24,21 @@ from .chapa_service import chapa_service
 
 
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
-    # Listing subscription plan
+    # Listing subscription plans — cached for 1 hour since plans rarely change
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
+
+    def list(self, request, *args, **kwargs):
+        cache_key = 'subscription_plans'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, settings.CACHE_TTL_LONG)
+        return response
 
 
 class SubscriptionViewSet(viewsets.ViewSet):
@@ -40,7 +51,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
         subscriptions = UserSubscription.objects.filter(
             user=request.user,
             status='active'
-        )
+        ).select_related('plan')
         
         # Filter for only valid ones (not expired)
         valid_subs = [s for s in subscriptions if s.is_valid()]
@@ -61,7 +72,9 @@ class SubscriptionViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def history(self, request):
         # Get user's subscription history
-        subscriptions = UserSubscription.objects.filter(user=request.user)
+        subscriptions = UserSubscription.objects.filter(
+            user=request.user
+        ).select_related('plan').order_by('-created_at')
         serializer = UserSubscriptionSerializer(subscriptions, many=True)
         return Response(serializer.data)
     

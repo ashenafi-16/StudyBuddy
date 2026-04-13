@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Loading, ErrorMessage } from "../components/common/LoadingError";
 import {
   Briefcase, Camera, Edit2, Save, X, Lock,
-  Shield, Users, BookOpen, Clock, Award, Flame, Calendar, TrendingUp,
+  Shield, Users, Clock, Award, Flame, Calendar, TrendingUp,
   Mail, CheckCircle, Sparkles
 } from "lucide-react";
 import type { DashboardData } from "../types/study";
