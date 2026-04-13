@@ -107,8 +107,7 @@ export const chatAPI = {
   getConversations: async (search?: string): Promise<Conversation[]> => {
     const params = search ? `?search=${encodeURIComponent(search)}` : '';
     const res = await api.get(`/conversations/${params}`);
-    const data = res.data;
-    return Array.isArray(data) ? data : data?.results || [];
+    return res.data;
   },
 
   /** Start a DM with user */
@@ -124,8 +123,7 @@ export const chatAPI = {
     const res = await api.get(
       `/messages/conversation_messages/?conversation_id=${conversationId}`
     );
-    const data = res.data;
-    return Array.isArray(data) ? data : data?.results || [];
+    return res.data;
   },
 
   /** Send a message */
@@ -143,15 +141,13 @@ export const chatAPI = {
   /** Search users */
   searchUsers: async (query: string): Promise<any[]> => {
     const res = await api.get(`/auth/users/search/?q=${query}`);
-    const data = res.data;
-    return Array.isArray(data) ? data : data?.results || [];
+    return res.data;
   },
 
   /** Search groups */
   searchGroups: async (query: string): Promise<any[]> => {
     const res = await api.get(`/groups/search/?q=${query}`);
-    const data = res.data;
-    return Array.isArray(data) ? data : data?.results || [];
+    return res.data;
   },
 
 
@@ -167,8 +163,7 @@ export const chatAPI = {
 
   getUserGroups: async (): Promise<any[]> => {
     const res = await api.get("/groups/my-groups/");
-    const data = res.data;
-    return Array.isArray(data) ? data : data?.results || [];
+    return res.data;
   },
 };
 

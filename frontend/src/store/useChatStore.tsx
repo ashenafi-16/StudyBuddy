@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import api from "../services/api";
-import { unwrapPaginated } from "../api/pagination";
 
 export interface User {
   id: number;
@@ -209,7 +208,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     set({ isUsersLoading: true });
     try {
       const res = await api.get("/conversations/group_list/");
-      set({ allContacts: unwrapPaginated(res.data) });
+      set({ allContacts: res.data || [] });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load groups");
     } finally {
@@ -222,7 +221,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     set({ isUsersLoading: true });
     try {
       const res = await api.get("/conversations/individual_list/");
-      set({ chats: unwrapPaginated(res.data) });
+      set({ chats: res.data || [] });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load chats");
     } finally {
@@ -243,7 +242,7 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
         params: { conversation_id: id },
       });
 
-      set({ messages: unwrapPaginated(res.data) });
+      set({ messages: res.data || [] });
     } catch (err) {
       toast.error("Failed to load messages");
     } finally {

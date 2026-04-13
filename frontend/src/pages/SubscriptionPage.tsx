@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Check, Star, Shield, Zap, AlertCircle, Loader2 } from "lucide-react";
-import { fetchSubscriptionPlans, subscribeToPlan, verifyPayment, type SubscriptionPlan } from "../api/subscriptionApi";
+import { fetchSubscriptionPlans, fetchMySubscription, subscribeToPlan, verifyPayment, type SubscriptionPlan, type UserSubscription } from "../api/subscriptionApi";
 import { Loading } from "../components/common/LoadingError";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";

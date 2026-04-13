@@ -1,2 +1,11 @@
-/.env.docker
+.env.docker
 /doc.txt
+.env.*
+backend/venv/
+backend/.env
+backend/db.sqlite3
+frontend/node_modules
+frontend/package-lock.json
+frontend/dist
+frontend/.env.local
+frontend/.env.production

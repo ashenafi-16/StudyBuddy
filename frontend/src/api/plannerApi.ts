@@ -1,5 +1,4 @@
 import api from './api';
-import { unwrapPaginated } from './pagination';
 
 // ============================================
 // TYPES
@@ -81,17 +80,17 @@ export const fetchCalendarEvents = async (start?: string, end?: string): Promise
     if (end) params.append('end', end);
 
     const response = await api.get('/sessions/calendar/', { params });
-    return unwrapPaginated<CalendarEvent>(response.data);
+    return response.data;
 };
 
 export const fetchSessions = async (): Promise<StudySession[]> => {
     const response = await api.get('/sessions/');
-    return unwrapPaginated<StudySession>(response.data);
+    return response.data;
 };
 
 export const fetchUpcomingSessions = async (): Promise<StudySession[]> => {
     const response = await api.get('/sessions/upcoming/');
-    return unwrapPaginated<StudySession>(response.data);
+    return response.data;
 };
 
 export const createSession = async (data: CreateSessionData): Promise<StudySession> => {
@@ -123,5 +122,5 @@ export const startSession = async (id: number): Promise<StudySession> => {
 
 export const fetchMyGroups = async (): Promise<StudyGroupMinimal[]> => {
     const response = await api.get('/groups/my-groups/');
-    return unwrapPaginated<StudyGroupMinimal>(response.data);
+    return response.data;
 };

@@ -28,7 +28,7 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-=f=fyo=*f*kj^#*l$7_j15rgogz^emlr3*i9#e6bqp3kv$@gt9')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
@@ -149,16 +149,9 @@ CACHES = {
         "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-        "KEY_PREFIX": "studybuddy",
+        }
     }
 }
-
-# Cache TTL constants (seconds)
-CACHE_TTL_SHORT = 60        # 1 minute — group lists, file lists
-CACHE_TTL_MEDIUM = 300      # 5 minutes — analytics, heatmap, dashboards
-CACHE_TTL_LONG = 3600       # 1 hour — subscription plans, static data
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -218,30 +211,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '30/minute',
-        'user': '120/minute',
-        'login': '5/minute',
-        'heartbeat': '10/minute',
-    },
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),   
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30), 
 }
 
 # ALLOWED_HOSTS already set above via env var
@@ -252,11 +231,8 @@ SIMPLE_JWT = {
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 
-# CORS settings — whitelist origins from env, fallback to localhost for dev
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://127.0.0.1:5173'
-).split(',')
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -270,18 +246,11 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Security headers
-SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
-
-# Session and CSRF cookie security
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+# # Session and CSRF settings
+# SESSION_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_SAMESITE = 'Lax'
+# SESSION_COOKIE_HTTPONLY = True
+# CSRF_COOKIE_HTTPONLY = False  # Should be False for JavaScript access
 
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
@@ -338,6 +307,3 @@ SOCIAL_AUTH_REQUIRE_POST = True
 
 # Bypass intermediate page for Google Login
 SOCIALACCOUNT_LOGIN_ON_GET = True
-
-
-CORS_ALLOW_ALL_ORIGINS = True

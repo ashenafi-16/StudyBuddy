@@ -1,12 +1,11 @@
 import api from './api';
 import type { Conversation, Message, SendMessageRequest } from '../types/chat';
-import { unwrapPaginated } from './pagination';
 
 // Fetch all conversations
 export const fetchConversations = async (query?: string): Promise<Conversation[]> => {
     const params = query ? { search: query } : {};
     const response = await api.get('/conversations/', { params });
-    return unwrapPaginated<Conversation>(response.data);
+    return response.data;
 };
 
 // Fetch specific conversation
@@ -18,7 +17,7 @@ export const fetchConversation = async (id: number): Promise<Conversation> => {
 // Fetch messages for a conversation
 export const fetchMessages = async (conversationId: number): Promise<Message[]> => {
     const response = await api.get(`/messages/?conversation_id=${conversationId}`);
-    return unwrapPaginated<Message>(response.data);
+    return response.data;
 };
 
 // Send text message

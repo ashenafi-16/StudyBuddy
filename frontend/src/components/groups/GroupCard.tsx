@@ -1,5 +1,5 @@
 import type { StudyGroup } from '../../types/groups';
-import { getGroupTypeColor } from '../../api/groupsApi';
+import { getGroupTypeLabel, getGroupTypeColor } from '../../api/groupsApi';
 import { Users, Lock, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ interface GroupCardProps {
 
 export default function GroupCard({ group, onJoin, isJoining }: GroupCardProps) {
     const typeColor = getGroupTypeColor(group.group_type);
+    const typeLabel = getGroupTypeLabel(group.group_type);
 
     return (
         <div className="group h-full">

@@ -14,8 +14,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from .tasks import send_password_reset_email_task
 from django.shortcuts import redirect
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from common.throttles import LoginRateThrottle
 User = get_user_model()
 
 def get_token_for_user(user):
@@ -114,7 +114,6 @@ class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
-    throttle_classes = [LoginRateThrottle]
     
     def post(self, request, *args, **kwargs):
         serilizer = self.get_serializer(data=request.data)

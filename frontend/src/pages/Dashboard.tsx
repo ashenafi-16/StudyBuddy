@@ -73,7 +73,7 @@ export default function Dashboard() {
 
         setDashboardData(dash);
         setAnalyticsData(analytics);
-        setRecentGroups((groups || []).slice(0, 4));
+        setRecentGroups(groups.slice(0, 4));
       } catch (err: any) {
         console.error("Dashboard load error:", err);
         setError(err.message);
@@ -89,6 +89,7 @@ export default function Dashboard() {
   if (error) return <ErrorMessage error={error} />;
 
   const userName = dashboardData?.user_profile?.first_name || dashboardData?.user_profile?.full_name?.split(' ')[0] || 'Student';
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -98,6 +99,7 @@ export default function Dashboard() {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==')] opacity-30" />
           <div className="relative">
             <div className="flex items-center gap-3 mb-2">
+              <span className="text-4xl">👋</span>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">
                 Welcome back, {userName}!
               </h1>

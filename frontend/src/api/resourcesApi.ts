@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { unwrapPaginated } from './pagination';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -39,7 +38,7 @@ export const fetchFiles = async (): Promise<StudyFileList[]> => {
     const response = await axios.get(`${API_BASE}/files/`, {
         headers: getAuthHeader()
     });
-    return unwrapPaginated<StudyFileList>(response.data);
+    return response.data;
 };
 
 export const fetchMyFiles = async (): Promise<StudyFileList[]> => {
@@ -47,14 +46,14 @@ export const fetchMyFiles = async (): Promise<StudyFileList[]> => {
         headers: getAuthHeader(),
         params: { mine: true } // Backend filter for user's own files
     });
-    return unwrapPaginated<StudyFileList>(response.data);
+    return response.data;
 };
 
 export const fetchGroupFiles = async (groupId: number): Promise<StudyFileList[]> => {
     const response = await axios.get(`${API_BASE}/files/group/${groupId}/`, {
         headers: getAuthHeader()
     });
-    return unwrapPaginated<StudyFileList>(response.data);
+    return response.data;
 };
 
 export const fetchFilesByType = async (type: string): Promise<StudyFileList[]> => {
@@ -62,7 +61,7 @@ export const fetchFilesByType = async (type: string): Promise<StudyFileList[]> =
         headers: getAuthHeader(),
         params: { type }
     });
-    return unwrapPaginated<StudyFileList>(response.data);
+    return response.data;
 };
 
 export const fetchFileDetails = async (id: number): Promise<StudyFile> => {

@@ -4,11 +4,8 @@ from .views import UserViewSet, LoginView, PasswordChangeView, PasswordResetRequ
 
 router = DefaultRouter()
 router.register(f'users', UserViewSet)
-user_create = UserViewSet.as_view({'post': 'create'})
-
 
 urlpatterns = [
-    path('api/auth/register/', user_create, name='register'),
     path('api/auth/', include(router.urls)),
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/password-change/', PasswordChangeView.as_view(), name='password-change'),

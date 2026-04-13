@@ -3,11 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 interface SidebarProps {
-  isOpen?: boolean;
-  onClose?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, isPremium, subscriptions } = useAuth();
@@ -49,7 +49,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo Section */}
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <span className="text-white font-bold text-xl">S</span>

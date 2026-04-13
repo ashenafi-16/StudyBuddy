@@ -1,5 +1,4 @@
-import { useState, useRef } from "react";
-import type { ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuth } from "../contexts/AuthContext";
 import { LogOut, Volume2, VolumeX } from "lucide-react";
@@ -10,7 +9,7 @@ interface ProfileHeaderProps {
   compact?: boolean;
 }
 
-const ProfileHeader = (_props: ProfileHeaderProps) => {
+const ProfileHeader = ({ compact = false }: ProfileHeaderProps) => {
   const { isSoundEnabled, toggleSound } = useChatStore();
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const { user, logout, updateProfile } = useAuth();

@@ -18,8 +18,6 @@ from django.utils.timezone import now as timezone_now
 from rest_framework.exceptions import PermissionDenied
 from Message.models import Conversation, ConversationMember
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from django.core.cache import cache
-from django.conf import settings
 
 class StudyGroupViewSet(viewsets.ModelViewSet):
     queryset = StudyGroup.objects.all()
@@ -39,13 +37,9 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return StudyGroup.objects.filter(
                 Q(is_public=True) | Q(members__user=user, members__is_active=True)
-            ).select_related('created_by').prefetch_related(
-                'members__user'
             ).distinct().order_by('-created_at')
 
-        return StudyGroup.objects.select_related('created_by').prefetch_related(
-            'members__user'
-        ).all()
+        return StudyGroup.objects.all()
     
     def perform_create(self, serializer):
         user = self.request.user
@@ -72,11 +66,6 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
                 conversation=conversation,
                 user = self.request.user
             )
-
-        # Invalidate group caches
-        cache.delete(f'my_groups_{user.id}')
-        cache.delete_many(cache.keys('group_list_*') if hasattr(cache, 'keys') else [])
-
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         user = request.user
@@ -89,20 +78,12 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='my-groups')
     def my_groups(self, request):
-        # Return groups where the current user is an active member, cached per user.
-        cache_key = f'my_groups_{request.user.id}'
-        cached = cache.get(cache_key)
-        if cached is not None:
-            return Response(cached)
-
+        # Return groups where the current user is an active member.
         groups = StudyGroup.objects.filter(
             members__user=request.user,
             members__is_active=True
-        ).select_related('created_by').prefetch_related(
-            'members__user'
         ).distinct().order_by('-created_at')
         serializer = StudyGroupListSerializer(groups, many=True, context={'request': request})
-        cache.set(cache_key, serializer.data, settings.CACHE_TTL_SHORT)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], url_path='join-via-link/(?P<token>[^/.]+)')
@@ -192,10 +173,6 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
             related_group=group
         )
         serilizer = GroupMemberSerializer(member)
-
-        # Invalidate caches for the joining user
-        cache.delete(f'my_groups_{request.user.id}')
-
         return Response(serilizer.data, status=status.HTTP_201_CREATED)
 
 
@@ -242,15 +219,12 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
         member.is_active = False
         member.save()
 
-        # Invalidate caches for the leaving user
-        cache.delete(f'my_groups_{request.user.id}')
-
         return Response({"message": "Successfully left the group."})
         
     @action(detail=True, methods=['get'])
     def members(self, request, pk=None):
         group = self.get_object()
-        members = group.members.filter(is_active=True).select_related('user')
+        members  = group.members.filter(is_active=True)
         
         serializer = GroupMemberSerializer(members, many=True)
         return Response(serializer.data)
@@ -258,12 +232,6 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def analytics(self, request, pk=None):
         group = self.get_object()
-
-        # Cache analytics per group for 5 minutes
-        cache_key = f'group_analytics_{group.id}'
-        cached = cache.get(cache_key)
-        if cached is not None:
-            return Response(cached)
 
         total_members = group.members.filter(is_active=True).count()
         
@@ -303,7 +271,6 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
             'completion_rate': round((completed_tasks/total_tasks * 100) if total_tasks > 0 else 0, 2)
         }
 
-        cache.set(cache_key, analytics_data, settings.CACHE_TTL_MEDIUM)
         return Response(analytics_data)
         
 class GroupMemberViewSet(viewsets.ModelViewSet):
@@ -322,7 +289,7 @@ class GroupMemberViewSet(viewsets.ModelViewSet):
         return GroupMember.objects.filter(
             group__members__user=user,
             group__members__is_active=True
-        ).select_related('user', 'group').distinct()
+        ).distinct()
     
     def perform_create(self, serializer):
         group_id = self.request.data.get('group_id')
