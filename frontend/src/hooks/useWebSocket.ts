@@ -4,7 +4,7 @@ import { WS_BASE } from '../api/apiClient';
 
 interface UseWebSocketProps {
     conversationId: number | null;
-    onMessageReceived?: (message: unknown) => void;
+    onMessageReceived?: (message: any) => void;
     onTypingIndicator?: (userId: number, isTyping: boolean) => void;
     onPresenceUpdate?: (userId: number, status: string) => void;
 }
