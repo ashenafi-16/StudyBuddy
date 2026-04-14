@@ -26,20 +26,3 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
 
-  - type: worker
-    name: studybuddy-celery
-    env: docker
-    dockerContext: .
-    dockerfilePath: Dockerfile.celery
-    plan: free
-
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-
-      - key: REDIS_URL
-        sync: false
-
-      - key: CELERY_BROKER_URL
-        sync: false
-
