@@ -1,5 +1,4 @@
 services:
-  # 1. Django Backend (Web Service)
   - type: web
     name: studybuddy-backend
     env: docker
@@ -10,39 +9,37 @@ services:
 
     envVars:
       - key: DATABASE_URL
-        value: your-render-postgres-url
+        sync: false
 
       - key: REDIS_URL
-        value: your-upstash-redis-url
+        sync: false
 
       - key: CELERY_BROKER_URL
-        value: your-upstash-redis-url
+        sync: false
 
       - key: DEBUG
         value: "False"
 
       - key: ALLOWED_HOSTS
-        value: studybuddy-backend.onrender.com,localhost
+        value: studybuddy-backend.onrender.com,localhost,127.0.0.1
 
       - key: DJANGO_SECRET_KEY
         generateValue: true
 
-  # 2. Celery Worker (Background Tasks)
   - type: worker
     name: studybuddy-celery
     env: docker
     dockerContext: .
-    dockerfilePath: Dockerfile.backend
+    dockerfilePath: Dockerfile.celery
     plan: free
-
-    startCommand: celery -A studybuddy worker -l info
 
     envVars:
       - key: DATABASE_URL
-        value: your-render-postgres-url
+        sync: false
 
       - key: REDIS_URL
-        value: your-upstash-redis-url
+        sync: false
 
       - key: CELERY_BROKER_URL
-        value: your-upstash-redis-url
+        sync: false
+
