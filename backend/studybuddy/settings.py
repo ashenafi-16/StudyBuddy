@@ -296,6 +296,8 @@ CHAPA_MOCK_MODE = False  # True for fake payments
 # for development 
 CELERY_TASK_ALWAYS_EAGER = True
 
+CELERY_BROKER_URL=os.getenv("CELERY_BROKER_URL")
+
 
 
 # o use the built-in JSONB field to store the extracted extra_data.
