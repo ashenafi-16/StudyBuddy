@@ -309,5 +309,5 @@ SOCIAL_AUTH_REQUIRE_POST = True
 # Bypass intermediate page for Google Login
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOWED_ORIGINS = [o for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o]
 CORS_ALLOW_CREDENTIALS = True
