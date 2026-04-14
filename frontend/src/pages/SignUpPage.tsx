@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE } from "../api/apiClient";
 import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle, Mail, Lock, Loader, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -135,7 +136,7 @@ const SignUpPage: React.FC = () => {
 
                                     <div className="mt-6">
                                         <a
-                                            href="http://127.0.0.1:8000/accounts/google/login/"
+                                            href={`${API_BASE}/accounts/google/login/`}
                                             className="w-full flex items-center justify-center gap-3 py-2.5 bg-white text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-all"
                                         >
                                             <svg className="w-5 h-5" viewBox="0 0 24 24">

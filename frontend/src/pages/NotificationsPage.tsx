@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/apiClient";
 import { Bell, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationItem from "../components/notifications/NotificationItem";
@@ -13,24 +13,15 @@ interface Notification {
     created_at: string;
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const token = localStorage.getItem("token");
-    const authHeaders = {
-        headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-        },
-    };
 
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
                 setLoading(true);
-                const resp = await axios.get(`${API_BASE_URL}/notifications/`, authHeaders);
+                const resp = await api.get('/notifications/');
                 const items: Notification[] = Array.isArray(resp.data) ? resp.data : resp.data.results ?? [];
 
                 // Ensure sorted by time (newest first)
@@ -45,7 +36,7 @@ export default function NotificationsPage() {
         };
 
         fetchNotifications();
-    }, [token]);
+    }, []);
 
     const markAllAsRead = async () => {
         try {
@@ -60,7 +51,7 @@ export default function NotificationsPage() {
             if (unreadIds.length === 0) return;
 
             await Promise.all(unreadIds.map(id =>
-                axios.put(`${API_BASE_URL}/notifications/${id}/mark-read/`, {}, authHeaders)
+                api.put(`/notifications/${id}/mark-read/`)
             ));
         } catch (err) {
             console.error("Failed to mark all as read", err);

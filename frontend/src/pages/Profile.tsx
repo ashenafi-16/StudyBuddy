@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import { API_BASE } from "../api/apiClient";
 import { Link } from "react-router-dom";
 import { Loading, ErrorMessage } from "../components/common/LoadingError";
 import {
@@ -68,8 +69,8 @@ export default function Profile() {
       };
 
       const [profileRes, studyRes] = await Promise.all([
-        fetch("http://127.0.0.1:8000/api/auth/users/profile/", { headers }),
-        fetch("http://127.0.0.1:8000/api/studytracker/streak_dashboard/", { headers })
+        fetch(`${API_BASE}/api/auth/users/profile/`, { headers }),
+        fetch(`${API_BASE}/api/studytracker/streak_dashboard/`, { headers })
       ]);
 
       if (!profileRes.ok) throw new Error(`Failed to fetch profile (${profileRes.status})`);
@@ -144,7 +145,7 @@ export default function Profile() {
         form.append("profile_pic", formData.profile_pic_url);
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/auth/users/update_profile/", {
+      const res = await fetch(`${API_BASE}/api/auth/users/update_profile/`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: form,

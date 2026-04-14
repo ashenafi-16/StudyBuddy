@@ -1,7 +1,5 @@
-import axios from 'axios';
-
-const API_BASE = 'http://127.0.0.1:8000/api';
-const WS_BASE = 'ws://127.0.0.1:8000';
+import api from './apiClient';
+import { WS_BASE, getToken } from './apiClient';
 
 export interface PomodoroSession {
     id: number;
@@ -11,30 +9,22 @@ export interface PomodoroSession {
     break_duration: number;
     long_break_duration: number;
     sessions_before_long_break: number;
-
-    // The Moment
     phase: 'work' | 'short_break' | 'long_break';
     state: 'idle' | 'running' | 'paused' | 'completed';
-    phase_start: string | null;     // ISO Date string
-    phase_duration: number;         // Seconds
-
-    // Pause state
+    phase_start: string | null;
+    phase_duration: number;
     paused_at: string | null;
     remaining_seconds_at_pause: number | null;
-
-    remaining_seconds: number;      // Server calculated snapshot
+    remaining_seconds: number;
     allow_member_pause: boolean;
     is_leader: boolean;
     is_creator: boolean;
     sync_mode: 'forced' | 'flexible';
-
     current_session_number: number;
     started_by: number | null;
     started_by_username: string | null;
     created_at: string;
     updated_at: string;
-
-    // FLEXIBLE mode fields
     is_personal_timer?: boolean;
     current_user_name?: string;
 }
@@ -48,42 +38,33 @@ export interface PomodoroSettings {
     sync_mode?: 'forced' | 'flexible';
 }
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const fetchPomodoroByGroup = async (groupId: number): Promise<PomodoroSession> => {
-    const response = await axios.get(`${API_BASE}/pomodoro/by_group/`, {
-        headers: getAuthHeader(),
-        params: { group_id: groupId }
-    });
+    const response = await api.get('/pomodoro/by_group/', { params: { group_id: groupId } });
     return response.data;
 };
 
-// Actions
 export const startTimer = async (sessionId: number): Promise<PomodoroSession> => {
-    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/start/`, {}, { headers: getAuthHeader() });
+    const response = await api.post(`/pomodoro/${sessionId}/start/`);
     return response.data;
 };
 
 export const pauseTimer = async (sessionId: number): Promise<PomodoroSession> => {
-    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/pause/`, {}, { headers: getAuthHeader() });
+    const response = await api.post(`/pomodoro/${sessionId}/pause/`);
     return response.data;
 };
 
 export const resumeTimer = async (sessionId: number): Promise<PomodoroSession> => {
-    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/resume/`, {}, { headers: getAuthHeader() });
+    const response = await api.post(`/pomodoro/${sessionId}/resume/`);
     return response.data;
 };
 
 export const resetTimer = async (sessionId: number): Promise<PomodoroSession> => {
-    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/reset/`, {}, { headers: getAuthHeader() });
+    const response = await api.post(`/pomodoro/${sessionId}/reset/`);
     return response.data;
 };
 
 export const nextPhase = async (sessionId: number): Promise<PomodoroSession> => {
-    const response = await axios.post(`${API_BASE}/pomodoro/${sessionId}/next_phase/`, {}, { headers: getAuthHeader() });
+    const response = await api.post(`/pomodoro/${sessionId}/next_phase/`);
     return response.data;
 };
 
@@ -91,17 +72,13 @@ export const updatePomodoroSettings = async (
     sessionId: number,
     settings: Partial<PomodoroSettings>
 ): Promise<PomodoroSession> => {
-    const response = await axios.patch(
-        `${API_BASE}/pomodoro/${sessionId}/settings/`,
-        settings,
-        { headers: getAuthHeader() }
-    );
+    const response = await api.patch(`/pomodoro/${sessionId}/settings/`, settings);
     return response.data;
 };
 
 // WebSocket connection helper
 export const createPomodoroWebSocket = (groupId: number): WebSocket => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const wsUrl = token
         ? `${WS_BASE}/ws/pomodoro/${groupId}/?token=${token}`
         : `${WS_BASE}/ws/pomodoro/${groupId}/`;

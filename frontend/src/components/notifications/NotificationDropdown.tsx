@@ -1,7 +1,8 @@
 // src/components/notifications/NotificationDropdown.tsx
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Bell } from "lucide-react";
-import axios from "axios";
+import api from "../../api/apiClient";
+import { WS_BASE } from "../../api/apiClient";
 import NotificationItem from "./NotificationItem";
 
 interface Notification {
@@ -13,30 +14,19 @@ interface Notification {
   created_at: string;
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-const WS_BASE_URL = "ws://127.0.0.1:8000";
-
 export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [marking, setMarking] = useState(false); // prevents duplicate mark-read runs
+  const [marking, setMarking] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
 
-  const token = localStorage.getItem("token"); // or get from context
-
-  const authHeaders = {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  };
-
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const resp = await axios.get(`${API_BASE_URL}/notifications/`, authHeaders);
+      const resp = await api.get('/notifications/');
       const items = Array.isArray(resp.data) ? resp.data : resp.data.results ?? [];
       setNotifications(items);
     } catch (err) {
@@ -48,7 +38,7 @@ export default function NotificationDropdown() {
 
   const fetchUnread = async (): Promise<Notification[]> => {
     try {
-      const resp = await axios.get(`${API_BASE_URL}/notifications/unread/`, authHeaders);
+      const resp = await api.get('/notifications/unread/');
       return Array.isArray(resp.data) ? resp.data : resp.data.results ?? [];
     } catch (err) {
       console.error("Failed to load unread notifications", err);
@@ -73,7 +63,7 @@ export default function NotificationDropdown() {
       setNotifications(prev => prev.map(n => unreadIds.includes(n.id) ? { ...n, is_read: true } : n));
 
       await Promise.all(unreadIds.map(id =>
-        axios.put(`${API_BASE_URL}/notifications/${id}/mark-read/`, {}, authHeaders)
+        api.put(`/notifications/${id}/mark-read/`)
           .catch(err => {
             console.error(`mark-read failed for ${id}`, err);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: false } : n));
@@ -110,9 +100,9 @@ export default function NotificationDropdown() {
 
   // WebSocket connection for real-time notifications
   const connectWebSocket = useCallback(() => {
-    if (!token) return;
+    if (!localStorage.getItem('token')) return;
 
-    const wsUrl = `${WS_BASE_URL}/ws/notifications/?token=${token}`;
+    const wsUrl = `${WS_BASE}/ws/notifications/?token=${localStorage.getItem('token')}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -152,7 +142,7 @@ export default function NotificationDropdown() {
     };
 
     wsRef.current = ws;
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     connectWebSocket();

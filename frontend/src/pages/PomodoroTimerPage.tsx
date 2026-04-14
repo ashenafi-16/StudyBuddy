@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { WS_BASE } from '../api/apiClient';
 import {
     Timer, Play, Pause, RotateCcw,
     Volume2, VolumeX, Lock, SkipForward, Settings, Users
@@ -124,7 +125,7 @@ export default function PomodoroTimerPage() {
 
     const setupWebSocket = (groupId: number) => {
         wsRef.current?.close();
-        const ws = new WebSocket(`ws://127.0.0.1:8000/ws/pomodoro/${groupId}/?token=${localStorage.getItem('token')}`);
+        const ws = new WebSocket(`${WS_BASE}/ws/pomodoro/${groupId}/?token=${localStorage.getItem('token')}`);
         wsRef.current = ws;
 
         ws.onmessage = (event) => {

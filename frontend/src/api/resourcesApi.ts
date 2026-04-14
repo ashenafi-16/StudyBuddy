@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE = 'http://127.0.0.1:8000/api';
+import api from './apiClient';
 
 export interface StudyFile {
     id: number;
@@ -29,45 +27,28 @@ export interface StudyFileList {
     uploaded_at: string;
 }
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const fetchFiles = async (): Promise<StudyFileList[]> => {
-    const response = await axios.get(`${API_BASE}/files/`, {
-        headers: getAuthHeader()
-    });
+    const response = await api.get('/files/');
     return response.data;
 };
 
 export const fetchMyFiles = async (): Promise<StudyFileList[]> => {
-    const response = await axios.get(`${API_BASE}/files/`, {
-        headers: getAuthHeader(),
-        params: { mine: true } // Backend filter for user's own files
-    });
+    const response = await api.get('/files/', { params: { mine: true } });
     return response.data;
 };
 
 export const fetchGroupFiles = async (groupId: number): Promise<StudyFileList[]> => {
-    const response = await axios.get(`${API_BASE}/files/group/${groupId}/`, {
-        headers: getAuthHeader()
-    });
+    const response = await api.get(`/files/group/${groupId}/`);
     return response.data;
 };
 
 export const fetchFilesByType = async (type: string): Promise<StudyFileList[]> => {
-    const response = await axios.get(`${API_BASE}/files/by_type/`, {
-        headers: getAuthHeader(),
-        params: { type }
-    });
+    const response = await api.get('/files/by_type/', { params: { type } });
     return response.data;
 };
 
 export const fetchFileDetails = async (id: number): Promise<StudyFile> => {
-    const response = await axios.get(`${API_BASE}/files/${id}/`, {
-        headers: getAuthHeader()
-    });
+    const response = await api.get(`/files/${id}/`);
     return response.data;
 };
 
@@ -81,22 +62,15 @@ export const uploadFile = async (
     formData.append('group', String(groupId));
     if (description) formData.append('description', description);
 
-    const response = await axios.post(`${API_BASE}/files/`, formData, {
-        headers: {
-            ...getAuthHeader(),
-            'Content-Type': 'multipart/form-data'
-        }
+    const response = await api.post('/files/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
 };
 
 export const deleteFile = async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE}/files/${id}/`, {
-        headers: getAuthHeader()
-    });
+    await api.delete(`/files/${id}/`);
 };
-
-// sharing features removed as they are now group-centric
 
 // Helper function to get file icon based on type
 export const getFileIcon = (fileType: string): string => {

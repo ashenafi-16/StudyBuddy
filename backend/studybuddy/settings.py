@@ -243,8 +243,8 @@ CORS_ALLOW_HEADERS = [
 
 
 
-CELERY_BROKER_URL = os.getenv("REDIS_URL")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", os.getenv("REDIS_URL"))
+CELERY_RESULT_BACKEND = os.getenv("CELERY_BROKER_URL", os.getenv("REDIS_URL"))
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -284,10 +284,8 @@ CHAPA_PUBLIC_KEY = os.getenv('CHAPA_PUBLIC_KEY')
 # MEDIA_ROOT = BASE_DIR / 'media'
 CHAPA_MOCK_MODE = False  # True for fake payments
 
-# for development 
-CELERY_TASK_ALWAYS_EAGER = True
-
-CELERY_BROKER_URL=os.getenv("CELERY_BROKER_URL")
+# For development, set to True. In production, should be False.
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False').lower() in ('true', '1')
 
 
 

@@ -38,6 +38,16 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserProfileSerializer
         return UserProfileSerializer
     
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        tokens = get_token_for_user(user)
+        return Response({
+            "user": UserProfileSerializer(user).data,
+            "tokens": tokens
+        }, status=status.HTTP_201_CREATED)
+    
     def get_permissions(self):
         if self.action == 'create':
             return [permissions.AllowAny()]
