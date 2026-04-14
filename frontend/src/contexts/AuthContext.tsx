@@ -36,7 +36,6 @@ interface AuthContextType {
   register: (
     email: string,
     password: string,
-    role: string,
     username: string
   ) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (
@@ -144,12 +143,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (email: string, password: string, role: string, username: string) => {
+  const register = async (email: string, password: string, username: string) => {
     try {
       const response = await authAPI.signup({
         email,
         password,
-        role,
         username,
       });
 

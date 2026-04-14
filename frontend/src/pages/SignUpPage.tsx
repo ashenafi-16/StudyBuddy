@@ -21,7 +21,7 @@ const SignUpPage: React.FC = () => {
         try {
             const username = formData.fullName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000);
 
-            const result = await register(formData.email, formData.password, "student", username);
+            const result = await register(formData.email, formData.password, username);
             if (result.success) {
                 toast.success("Account created successfully!")
                 navigate("/");

@@ -12,7 +12,7 @@ export const authAPI = {
     return res.data;
   },
 
-  signup: async (data: { email: string; password: string; role: string; username: string }) => {
+  signup: async (data: { email: string; password: string; username: string }) => {
     const res = await api.post("/auth/users/", data);
     return res.data;
   },
