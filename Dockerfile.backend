@@ -28,4 +28,4 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 8000
 
 # Run via Daphne (ASGI) to support HTTP + WebSockets
-CMD ["sh", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p $PORT studybuddy.asgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p $PORT studybuddy.asgi:application"]

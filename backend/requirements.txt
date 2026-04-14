@@ -21,3 +21,4 @@ cloudinary
 django-cloudinary-storage
 drf-spectacular
 gunicorn
+dj-database-url
