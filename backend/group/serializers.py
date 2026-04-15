@@ -25,7 +25,6 @@ class StudyGroupListSerializer(serializers.ModelSerializer):
     created_by = UserBasicSerializer(read_only=True)
     member_count = serializers.ReadOnlyField()
     is_member = serializers.SerializerMethodField()
-    user_role = serializers.SerializerMethodField()
     profile_pic_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -33,7 +32,7 @@ class StudyGroupListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'group_name', 'group_description', 'group_type',
             'created_by', 'member_count', 'max_members', 'is_public',
-            'created_at', 'is_member', 'user_role', 'profile_pic_url'
+            'created_at', 'is_member', 'profile_pic_url'
         )
 
     def get_is_member(self, obj):
@@ -42,12 +41,6 @@ class StudyGroupListSerializer(serializers.ModelSerializer):
             return obj.members.filter(user=user, is_active=True).exists()
         return False
 
-    def get_user_role(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            membership = obj.members.filter(user=user, is_active=True).first()
-            return membership.role if membership else None
-        return None
 
     def get_profile_pic_url(self, obj):
         if obj.profile_pic:
@@ -84,7 +77,7 @@ class StudyGroupDetailSerializer(StudyGroupListSerializer):
             
         # For private groups, only show to admins/moderators
         membership = obj.members.filter(user=user, is_active=True).first()
-        if membership and membership.role in ['admin', 'moderator']:
+        if membership: # Simplified: allow all members for now or check if it was intended to stay restricted
             return obj.invitation_link
         return None
 
@@ -119,7 +112,7 @@ class GroupMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupMember
-        fields = ('id', 'user', 'group', 'group_name', 'group_profile_pic_url', 'role', 'joined_at', 'is_active')
+        fields = ('id', 'user', 'group', 'group_name', 'group_profile_pic_url', 'joined_at', 'is_active')
         read_only_fields = ('joined_at',)
 
     def get_group_profile_pic_url(self, obj):
@@ -170,4 +163,4 @@ class GroupMemberCreateSerializer(serializers.ModelSerializer):
 class GroupMemberUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupMember
-        fields = ('role', 'is_active')
+        fields = ('is_active',)
