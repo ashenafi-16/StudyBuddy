@@ -51,14 +51,8 @@ class StudyGroup(models.Model):
         return self.members.filter(is_active=True).count()
     
 class GroupMember(models.Model):
-    class MemberRoles(models.TextChoices):
-        admin = 'admin', 'Admin'
-        moderator = 'moderator', 'Moderator'
-        member = 'member', 'Member'
-        
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='group_memberships')
     group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE, related_name='members')
-    role = models.CharField(max_length=10, choices=MemberRoles.choices, default=MemberRoles.member)
     joined_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 

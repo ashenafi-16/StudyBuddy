@@ -37,11 +37,10 @@ class GroupMemberAdmin(admin.ModelAdmin):
     list_display = (
         'get_user_email',
         'get_group_name',
-        'role',
         'is_active',
         'joined_at',
     )
-    list_filter = ('role', 'is_active', 'joined_at')
+    list_filter = ('is_active', 'joined_at')
     search_fields = ('user__email', 'group__group_name')
     ordering = ('-joined_at',)
     autocomplete_fields = ('user', 'group')
@@ -50,7 +49,7 @@ class GroupMemberAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Membership Info', {
-            'fields': ('user', 'group', 'role', 'is_active')
+            'fields': ('user', 'group', 'is_active')
         }),
         ('Timestamps', {
             'fields': ('joined_at',)

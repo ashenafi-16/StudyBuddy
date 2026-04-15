@@ -380,7 +380,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def _can_reassign_task(self, task, user):
         return (task.created_by == user or 
-                (task.group and task.group.members.filter(user=user, role='admin').exists()))
+                (task.group and task.group.created_by == user))
 
 class StudyResourceViewSet(viewsets.ModelViewSet):
     queryset = StudyResource.objects.all()

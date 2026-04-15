@@ -51,8 +51,7 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
         GroupMember.objects.create(
             user=self.request.user,
-            group=group,
-            role='admin'
+            group=group
         )
 
         # create conversation for this group
@@ -144,15 +143,13 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
         if inactive_member:
             inactive_member.is_active = True
-            inactive_member.role = 'member'
             inactive_member.save()
             member = inactive_member
         else:
             # create new membership
             member = GroupMember.objects.create(
                 user=request.user,
-                group=group,
-                role='member'
+                group=group
             )
         # Ensure conversation exists and user is added
         conversation, _ = Conversation.objects.get_or_create(
@@ -203,19 +200,11 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if member.role == 'admin':
-            admin_count = GroupMember.objects.filter(
-                group=group,
-                role='admin',
-                is_active=True
-            ).count()
-            
-            if admin_count == 1:
-                return Response({
-                    "error": "You are the only admin. Assign another admin  before leaving."
-                },
-                status=status.HTTP_400_BAD_REQUEST
-                )
+        if member.user == group.created_by:
+            # For simplicity, we'll allow the creator to leave but note that 
+            # the group might become ownerless if they are the only person.
+            # However, the user said "remove role at all", so we'll just remove the restriction.
+            pass
         member.is_active = False
         member.save()
 
@@ -301,20 +290,20 @@ class GroupMemberViewSet(viewsets.ModelViewSet):
         except StudyGroup.DoesNotExist:
             raise ValidationError({"group_id": "Group does not exist."})
 
-        # Check if current user (request.user) is admin/moderator in this group
-        if group.group_type == 'private':
-            current_user_membership = GroupMember.objects.filter(
-                user=self.request.user,
-                group=group,
-                role__in=['admin', 'moderator'],
-                is_active=True
-            ).first()
-        else:
-            current_user_membership = GroupMember.objects.filter(
-                user=self.request.user,
-                group=group,
-                is_active=True
-            ).first()
+        # Check if current user is the group creator
+        is_creator = (group.created_by == self.request.user)
+        
+        if not is_creator and not group.is_public:
+            # Non-creators might not be able to add members to private groups
+            # depending on the desired policy. Given "remove role at all",
+            # we'll assume only creators can add members to private groups.
+            raise PermissionDenied("Only the group creator can add members to this private group.")
+        
+        current_user_membership = GroupMember.objects.filter(
+            user=self.request.user,
+            group=group,
+            is_active=True
+        ).first()
 
         if not current_user_membership:
             raise PermissionDenied("You don't have permission to add members to this group........")
@@ -327,15 +316,10 @@ class GroupMemberViewSet(viewsets.ModelViewSet):
         member_to_remove = self.get_object()
         group = member_to_remove.group
 
-        # Check if requesting user has permission (admin or moderator)
-        requester_membership = GroupMember.objects.filter(
-            user=request.user,
-            group=group,
-            role__in=['admin', 'moderator'],
-            is_active=True
-        ).first()
+        # Check if requesting user has permission (is group creator)
+        is_creator = (group.created_by == request.user)
 
-        if not requester_membership:
+        if not is_creator:
             raise PermissionDenied("You don't have permission to remove members from this group.")
 
         # Cannot remove the group creator

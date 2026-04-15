@@ -106,8 +106,8 @@ class PomodoroSession(models.Model):
         except GroupMember.DoesNotExist:
             return False
         
-        # Admins and moderators have full control
-        if member.role in [GroupMember.MemberRoles.admin, GroupMember.MemberRoles.moderator]:
+        # Group creators have full control
+        if self.group.created_by == user:
             return True
         
         # Settings changes are ALWAYS leader-only

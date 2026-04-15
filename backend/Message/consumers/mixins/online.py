@@ -1,8 +1,21 @@
+import os
+import logging
 from redis import Redis
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-redis = Redis(host="127.0.0.1", port=6379, db=0)
+logger = logging.getLogger(__name__)
+
+# Use REDIS_URL if available, otherwise fallback to local
+REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
+try:
+    redis = Redis.from_url(REDIS_URL, socket_connect_timeout=2)
+    # Simple ping to test connection early (optional, but good for local debugging)
+    # redis.ping() 
+except Exception as e:
+    logger.error(f"Failed to connect to Redis at {REDIS_URL}: {e}")
+    redis = None
 
 ONLINE_USERS_KEY = "online_users"
 
@@ -10,19 +23,21 @@ ONLINE_USERS_KEY = "online_users"
 class OnlineTrackerMixin:
     @sync_to_async
     def mark_online(self):
-        if not getattr(self, "user", None):
+        if not getattr(self, "user", None) or redis is None:
             return
         redis.sadd(ONLINE_USERS_KEY, int(self.user.id))
 
     @sync_to_async
     def mark_offline(self):
-        if not getattr(self, "user", None):
+        if not getattr(self, "user", None) or redis is None:
             return
         redis.srem(ONLINE_USERS_KEY, int(self.user.id))
 
     @staticmethod
     @sync_to_async
     def get_online_users():
+        if redis is None:
+            return []
         users = redis.smembers(ONLINE_USERS_KEY)
         return [int(uid) for uid in users]
 
@@ -64,16 +79,18 @@ class OnlineConsumer(AsyncJsonWebsocketConsumer):
     
     @sync_to_async
     def mark_online(self):
-        if self.user:
+        if self.user and redis is not None:
             redis.sadd(ONLINE_USERS_KEY, int(self.user.id))
     
     @sync_to_async
     def mark_offline(self):
-        if self.user:
+        if self.user and redis is not None:
             redis.srem(ONLINE_USERS_KEY, int(self.user.id))
     
     @staticmethod
     @sync_to_async
     def get_online_users():
+        if redis is None:
+            return []
         users = redis.smembers(ONLINE_USERS_KEY)
         return [int(uid) for uid in users]
