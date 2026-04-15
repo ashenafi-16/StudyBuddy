@@ -1,10 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { WS_BASE } from '../api/apiClient';
+import type { Message } from '../store/useChatStore';
 
 interface UseWebSocketProps {
     conversationId: number | null;
-    onMessageReceived?: (message: any) => void;
+    onMessageReceived?: (message: Message) => void;
     onTypingIndicator?: (userId: number, isTyping: boolean) => void;
     onPresenceUpdate?: (userId: number, status: string) => void;
 }
