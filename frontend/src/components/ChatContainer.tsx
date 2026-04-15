@@ -22,7 +22,7 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
   // Connect to WebSocket for real-time messages
   useWebSocket({
     conversationId: selectedUser?.id || null,
-    onMessageReceived: handleWebSocketMessage as (message: any) => void,
+    onMessageReceived: (msg: any) => handleWebSocketMessage(msg),
   });
 
   useEffect(() => {
