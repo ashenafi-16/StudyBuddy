@@ -27,7 +27,7 @@ export default function AuthPage() {
       if (activeTab === "login") {
         result = await login(formData.email, formData.password);
       } else {
-        result = await register(formData.email, formData.password, formData.username);
+        result = await (register as any)(formData.email, formData.password, formData.username);
       }
 
       if (result.success) {

@@ -1,7 +1,8 @@
+import React from "react";
 import { MessageCircleIcon } from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
 
-function NoChatsFound({ message = "No conversations yet" }: { message?: string }) {
+const NoChatsFound: React.FC<{ message?: string }> = ({ message = "No conversations yet" }) => {
   const { setActiveTab } = useChatStore();
  
   return (

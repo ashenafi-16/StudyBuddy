@@ -26,16 +26,10 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email=email,username=username, password=password, **extra_fields)
 
 class CustomUser(AbstractUser):
-    class UserROles(models.TextChoices):
-        student = 'student', 'Student'
-        tutor  = 'tutor', 'Tutor'
-        admin = 'admin', 'Admin'
-    
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=True)
     profile_pic = CloudinaryField('image', folder='profile_pictures/', blank=True, null=True)
     bio = models.TextField(max_length=500, blank=True)
-    role = models.CharField(max_length=10, choices=UserROles.choices, default=UserROles.student)
     created_at = models.DateTimeField(auto_now_add=True)
     
     USERNAME_FIELD = 'email'
@@ -50,7 +44,7 @@ class CustomUser(AbstractUser):
 
     @property
     def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.first_name} {self.last_name} || {self.username}"
     
     def __str__(self):
         return self.email

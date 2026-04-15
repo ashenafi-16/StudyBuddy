@@ -135,6 +135,21 @@ class LoginView(generics.GenericAPIView):
             "user": UserProfileSerializer(user).data,
             "tokens": tokens
         })
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        tokens = get_token_for_user(user)
+        return Response({
+            "user": UserProfileSerializer(user).data,
+            "tokens": tokens
+        }, status=status.HTTP_201_CREATED)
     
 class PasswordChangeView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]

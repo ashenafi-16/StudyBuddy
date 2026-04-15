@@ -7,7 +7,7 @@ import BorderAnimatedContainer from "../components/common/BorderAnimatedContaine
 import toast from "react-hot-toast";
 
 const SignUpPage: React.FC = () => {
-    const [formData, setFormData] = useState({ fullName: "", email: "", password: "" });
+    const [formData, setFormData] = useState({ username: "", email: "", password: "" });
     const { register } = useAuth();
     const navigate = useNavigate();
     const [isSigningUp, setIsSigningUp] = useState(false);
@@ -19,9 +19,7 @@ const SignUpPage: React.FC = () => {
         setError("");
 
         try {
-            const username = formData.fullName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000);
-
-            const result = await register(formData.email, formData.password, username);
+            const result = await (register as any)(formData.email, formData.password, formData.username);
             if (result.success) {
                 toast.success("Account created successfully!")
                 navigate("/");
@@ -62,17 +60,17 @@ const SignUpPage: React.FC = () => {
 
                                 {/* FORM */}
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    {/* FULL NAME */}
+                                    {/* USERNAME */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-400 mb-1.5">Full Name</label>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1.5">Username</label>
                                         <div className="relative">
                                             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                             <input
                                                 type="text"
-                                                value={formData.fullName}
-                                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                                value={formData.username}
+                                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
-                                                placeholder="John Doe"
+                                                placeholder="Enter your username"
                                                 required
                                             />
                                         </div>

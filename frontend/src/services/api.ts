@@ -13,7 +13,7 @@ export const authAPI = {
   },
 
   signup: async (data: { email: string; password: string; username: string }) => {
-    const res = await api.post("/auth/users/", data);
+    const res = await api.post("/auth/register/", data);
     return res.data;
   },
 

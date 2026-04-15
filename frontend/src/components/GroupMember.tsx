@@ -9,8 +9,8 @@ import {
 } from "../api/groupsApi";
 import type { GroupMember, StudyGroupDetail } from "../types/groups";
 import { Loading, ErrorMessage } from "./common/LoadingError";
-import Sidebar from "./common/Sidebar";
-import Navbar from "./common/Navbar";
+import SidebarComponent from "./common/Sidebar";
+import NavbarComponent from "./common/Navbar";
 
 export default function GroupMembers() {
   const { id } = useParams<{ id: string }>();
@@ -101,10 +101,10 @@ export default function GroupMembers() {
 
   return (
     <div className="flex h-screen bg-[#0f172a] overflow-hidden">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <SidebarComponent isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
+        <NavbarComponent onMenuClick={() => setIsSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
           <div className="max-w-5xl mx-auto">
