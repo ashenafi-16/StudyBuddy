@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Users } from 'lucide-react';
-import { createGroup } from '../../api/groupsApi'; // We have this!
-import { useNavigate } from 'react-router-dom';
+import { createGroup } from '../../api/groupsApi';
+import type { GroupType } from '../../types/groups';
 
 interface NewGroupModalProps {
     isOpen: boolean;
@@ -10,7 +10,6 @@ interface NewGroupModalProps {
 }
 
 const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose, onCreate }) => {
-    const navigate = useNavigate();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState('study_buddy');
@@ -28,7 +27,7 @@ const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose, onCreate
             await createGroup({
                 group_name: name,
                 group_description: description,
-                group_type: type,
+                group_type: type as GroupType,
                 max_members: 10, // default
                 is_public: true
             });

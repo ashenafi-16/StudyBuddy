@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Search, UserPlus } from 'lucide-react';
-import { startChat } from '../../api/chatApi';
+// import { startChat } from '../../api/chatApi';
 
 interface NewChatModalProps {
     isOpen: boolean;
@@ -12,7 +12,7 @@ interface NewChatModalProps {
 // asking the backend to find and start chat.
 // Or we can add searchUsers to api.
 
-const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onCreate }) => {
+const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onCreate: _onCreate }) => {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

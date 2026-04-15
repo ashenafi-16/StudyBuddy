@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { Mail, Lock, Shield, Eye, EyeOff, GraduationCap, BookOpen, User, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AuthPage() {
   const { login, register } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
-  const [formData, setFormData] = useState({ email: "", password: "", role: "student", username: "" });
+  const [formData, setFormData] = useState({ email: "", password: "", username: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +27,7 @@ export default function AuthPage() {
       if (activeTab === "login") {
         result = await login(formData.email, formData.password);
       } else {
-        result = await register(formData.email, formData.password, formData.role, formData.username);
+        result = await register(formData.email, formData.password, formData.username);
       }
 
       if (result.success) {
@@ -42,18 +42,7 @@ export default function AuthPage() {
     }
   };
 
-  const renderRoleIcon = () => {
-    switch (formData.role) {
-      case 'admin':
-        return <Shield className="text-emerald-400" size={20} />;
-      case "student":
-        return <GraduationCap className="text-emerald-400" size={20} />;
-      case "tutor":
-        return <BookOpen className="text-emerald-400" size={20} />;
-      default:
-        return null;
-    }
-  };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0f172a] relative overflow-hidden">
@@ -166,28 +155,7 @@ export default function AuthPage() {
               </button>
             </div>
 
-            {activeTab === "signup" && (
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {renderRoleIcon()}
-                </div>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full h-12 pl-12 pr-4 bg-white/5 border border-white/10 rounded-xl 
-                             focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 
-                             text-white outline-none appearance-none transition-all cursor-pointer"
-                >
-                  <option value="student" className="bg-slate-800">Student</option>
-                  <option value="tutor" className="bg-slate-800">Tutor</option>
-                  <option value="admin" className="bg-slate-800">Admin</option>
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none border-l border-white/10 pl-4">
-                  <ArrowRight size={16} className="text-slate-400 rotate-90" />
-                </div>
-              </div>
-            )}
+
 
             <button
               type="submit"

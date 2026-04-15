@@ -31,6 +31,11 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+        
     def get_serializer_class(self):
         if self.action == 'create':
             return RegisterSerializer
@@ -48,11 +53,6 @@ class UserViewSet(viewsets.ModelViewSet):
             "tokens": tokens
         }, status=status.HTTP_201_CREATED)
     
-    def get_permissions(self):
-        if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
-        
     def get_queryset(self):
         if self.action == 'list':
             return CustomUser.objects.all()
