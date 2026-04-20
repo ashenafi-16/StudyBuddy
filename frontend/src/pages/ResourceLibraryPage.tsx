@@ -34,7 +34,7 @@ export default function ResourceLibraryPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const { isPremium } = useAuth();
+    const { isPremium, user } = useAuth();
 
     useEffect(() => {
         loadInitialData();
@@ -350,18 +350,20 @@ export default function ResourceLibraryPage() {
                                     <div className="flex border-t border-slate-700/50">
                                         <button
                                             onClick={() => handleDownload(file)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                                            className={`${file.owner === user?.username ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 py-3 text-sm text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all`}
                                         >
                                             <Download size={16} />
                                             Download
                                         </button>
-                                        <button
-                                            onClick={() => handleDelete(file)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all border-l border-slate-700/50"
-                                        >
-                                            <Trash2 size={16} />
-                                            Delete
-                                        </button>
+                                        {file.owner === user?.username && (
+                                            <button
+                                                onClick={() => handleDelete(file)}
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all border-l border-slate-700/50"
+                                            >
+                                                <Trash2 size={16} />
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -410,12 +412,14 @@ export default function ResourceLibraryPage() {
                                                     >
                                                         <Download size={18} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleDelete(file)}
-                                                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                    {file.owner === user?.username && (
+                                                        <button
+                                                            onClick={() => handleDelete(file)}
+                                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

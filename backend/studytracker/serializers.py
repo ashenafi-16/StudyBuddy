@@ -16,7 +16,10 @@ class StudyStreakSerializer(serializers.ModelSerializer):
 
 class UserAchievementSerializer(serializers.ModelSerializer):
     achievement_name = serializers.CharField(source='achievement.name')
+    icon_name = serializers.CharField(source='achievement.icon_name')
+    required_days = serializers.IntegerField(source='achievement.required_days')
+    description = serializers.CharField(source='achievement.description')
 
     class Meta:
         model = UserAchievement
-        fields = ['achievement_name', 'awarded_at']
+        fields = ['achievement_name', 'icon_name', 'required_days', 'description', 'awarded_at']

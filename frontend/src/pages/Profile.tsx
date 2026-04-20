@@ -25,6 +25,58 @@ interface UserProfile {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Badge Style Helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BadgeStyle {
+  emoji: string;
+  bgFrom: string;
+  bgTo: string;
+  iconFrom: string;
+  iconTo: string;
+  glow: string;
+  border: string;
+  textColor: string;
+  tagBg: string;
+}
+
+function getBadgeStyle(iconName: string): BadgeStyle {
+  const styles: Record<string, BadgeStyle> = {
+    badge_7d: {
+      emoji: '🥉', bgFrom: '#1a1208', bgTo: '#2a1f10',
+      iconFrom: '#cd7f32', iconTo: '#a0522d',
+      glow: 'rgba(205,127,50,0.3)', border: '#cd7f3240',
+      textColor: '#cd7f32', tagBg: '#cd7f3220',
+    },
+    badge_1m: {
+      emoji: '🥈', bgFrom: '#0f1419', bgTo: '#1a1f26',
+      iconFrom: '#c0c0c0', iconTo: '#808080',
+      glow: 'rgba(192,192,192,0.3)', border: '#c0c0c040',
+      textColor: '#c0c0c0', tagBg: '#c0c0c020',
+    },
+    badge_3m: {
+      emoji: '🥇', bgFrom: '#1a1508', bgTo: '#2a2510',
+      iconFrom: '#ffd700', iconTo: '#daa520',
+      glow: 'rgba(255,215,0,0.3)', border: '#ffd70040',
+      textColor: '#ffd700', tagBg: '#ffd70020',
+    },
+    badge_6m: {
+      emoji: '💎', bgFrom: '#081018', bgTo: '#101a28',
+      iconFrom: '#00bfff', iconTo: '#1e90ff',
+      glow: 'rgba(0,191,255,0.3)', border: '#00bfff40',
+      textColor: '#00bfff', tagBg: '#00bfff20',
+    },
+    badge_1y: {
+      emoji: '👑', bgFrom: '#180820', bgTo: '#281030',
+      iconFrom: '#9b59b6', iconTo: '#8e44ad',
+      glow: 'rgba(155,89,182,0.4)', border: '#9b59b640',
+      textColor: '#d8b4fe', tagBg: '#9b59b620',
+    },
+  };
+  return styles[iconName] || styles.badge_7d;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -539,31 +591,67 @@ export default function Profile() {
             </h3>
           </div>
 
-          <div className="divide-y divide-slate-700/50">
+          <div className="p-6">
             {studyData?.achievements && studyData.achievements.length > 0 ? (
-              studyData.achievements.map((ach, idx) => (
-                <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
-                      <Award size={22} className="text-amber-400" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                {studyData.achievements.map((ach, idx) => {
+                  const badge = getBadgeStyle(ach.icon_name);
+                  return (
+                    <div
+                      key={idx}
+                      className="group relative flex flex-col items-center text-center p-4 rounded-2xl border transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                      style={{
+                        background: `linear-gradient(135deg, ${badge.bgFrom}, ${badge.bgTo})`,
+                        borderColor: badge.border,
+                      }}
+                    >
+                      {/* Badge Icon */}
+                      <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-lg"
+                        style={{
+                          background: `linear-gradient(135deg, ${badge.iconFrom}, ${badge.iconTo})`,
+                          boxShadow: `0 0 20px ${badge.glow}`,
+                        }}
+                      >
+                        <span className="text-2xl">{badge.emoji}</span>
+                      </div>
+
+                      {/* Badge Name */}
+                      <h4 className="text-white font-bold text-xs leading-tight mb-1">
+                        {ach.achievement_name}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 leading-tight mb-2">
+                        {ach.required_days} day streak
+                      </p>
+
+                      {/* Earned Date */}
+                      <div
+                        className="text-[9px] font-medium px-2 py-0.5 rounded-full"
+                        style={{ color: badge.textColor, backgroundColor: badge.tagBg }}
+                      >
+                        {new Date(ach.awarded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                      </div>
+
+                      {/* Tooltip */}
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-[10px] px-3 py-1.5 rounded-lg shadow-xl border border-slate-700 whitespace-nowrap z-10">
+                        {ach.description || ach.achievement_name}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-white font-medium">{ach.achievement_name}</h4>
-                      <p className="text-xs text-slate-500">Earned on {new Date(ach.awarded_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                    <CheckCircle size={14} /> Unlocked
-                  </div>
-                </div>
-              ))
+                  );
+                })}
+              </div>
             ) : (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Award size={32} className="text-slate-600" />
+              <div className="text-center py-8">
+                <div className="flex justify-center gap-3 mb-4 opacity-30">
+                  {['🥉', '🥈', '🥇', '💎', '👑'].map((e, i) => (
+                    <div key={i} className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl border border-slate-700">
+                      {e}
+                    </div>
+                  ))}
                 </div>
                 <h4 className="text-white font-medium mb-2">No achievements yet</h4>
-                <p className="text-slate-500 text-sm">Start studying to unlock badges!</p>
+                <p className="text-slate-500 text-sm">Study consistently to unlock streak badges!</p>
               </div>
             )}
           </div>

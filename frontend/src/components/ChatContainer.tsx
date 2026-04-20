@@ -210,7 +210,7 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
 
                       {/* Text Message */}
                       {msg.message_type === "text" && (
-                        <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
+                        <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words break-all">
                           {msg.content}
                         </p>
                       )}

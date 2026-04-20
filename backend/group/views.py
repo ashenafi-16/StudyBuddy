@@ -95,7 +95,7 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def join(self,request, pk=None):
-        group_id = request.data.get('group_id')
+        group_id = pk or request.data.get('group_id')
 
         if not group_id:
             return Response(

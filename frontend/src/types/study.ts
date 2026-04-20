@@ -12,6 +12,9 @@ export interface StudyStreak {
 
 export interface Achievement {
     achievement_name: string;
+    icon_name: string;
+    required_days: number;
+    description: string;
     awarded_at: string;
 }
 

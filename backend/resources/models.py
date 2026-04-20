@@ -94,7 +94,13 @@ class StudyFile(models.Model):
     def file_url(self):
         # Get the Cloudinary URL for the file.
         if self.file:
-            return self.file.url
+            url = self.file.url
+            # Fix: non-image files (PDF, docs, etc.) need raw/upload instead of image/upload
+            if self.file_type in (self.FileType.PDF, self.FileType.DOCUMENT, 
+                                   self.FileType.PRESENTATION, self.FileType.SPREADSHEET,
+                                   self.FileType.OTHER):
+                url = url.replace('/image/upload/', '/raw/upload/')
+            return url
         return None
 
     @property

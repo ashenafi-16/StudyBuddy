@@ -48,105 +48,90 @@ export default function NotificationDropdown() {
   };
 
   // Mark single notification as read on server and update local state
-  // Mark as read functionality handled by NotificationContext
-
-  const markAllUnreadOnOpen = async () => {
+  const markAsRead = async (id: number) => {
     if (marking) return;
     setMarking(true);
     try {
-      const unread = await fetchUnread();
-      if (!unread || unread.length === 0) {
-        setMarking(false);
-        return;
-      }
-
-      const unreadIds = unread.map(n => n.id);
-      setNotifications(prev => prev.map(n => unreadIds.includes(n.id) ? { ...n, is_read: true } : n));
-
-      await Promise.all(unreadIds.map(id =>
-        api.put(`/notifications/${id}/mark-read/`)
-          .catch(err => {
-            console.error(`mark-read failed for ${id}`, err);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: false } : n));
-          })
-      ));
+      await api.post(`/notifications/${id}/mark_read/`);
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as read", err);
     } finally {
       setMarking(false);
     }
   };
 
-  const toggleDropdown = async () => {
-    const willOpen = !isOpen;
-    setIsOpen(willOpen);
-
-    if (willOpen) {
-      await fetchNotifications();
-      await markAllUnreadOnOpen();
+  // Mark all as read
+  const markAllUnreadOnOpen = async () => {
+    try {
+      await api.post('/notifications/mark_all_read/');
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error("Failed to mark all as read", err);
     }
   };
 
+  // Toggle dropdown
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(prev => {
+      const opening = !prev;
+      if (opening) fetchNotifications();
+      return opening;
+    });
+  };
+
+  // Close on outside click
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
-    };
+    }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch initial unread count
   useEffect(() => {
-    fetchNotifications();
+    fetchUnread().then(items => setNotifications(items));
   }, []);
 
-  // WebSocket connection for real-time notifications
+  // WebSocket for real-time notifications
   const connectWebSocket = useCallback(() => {
-    if (!localStorage.getItem('token')) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-    const wsUrl = `${WS_BASE}/ws/notifications/?token=${localStorage.getItem('token')}`;
+    const wsUrl = `${WS_BASE}/ws/notifications/?token=${token}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('Notification WebSocket connected');
+      console.log('[NOTIF WS] Connected');
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
-        if (data.type === 'initial_load') {
-          // Server sends unread notifications on connect
-          setNotifications(prev => {
-            const existingIds = new Set(prev.map(n => n.id));
-            const newNotifications = data.notifications.filter(
-              (n: Notification) => !existingIds.has(n.id)
-            );
-            return [...newNotifications, ...prev];
-          });
-        } else if (data.type === 'new_notification') {
-          // Real-time notification from Pomodoro lifecycle
-          const notification = data.notification;
-          setNotifications(prev => [notification, ...prev]);
-          // Show toast for new notifications
-          toast(notification.title || 'New notification', {
-            icon: '🔔',
-            style: {
-              background: '#1e293b',
-              color: '#f8fafc',
-              border: '1px solid #334155',
-              borderRadius: '12px',
-            },
-            duration: 4000,
-          });
+        if (data.type === 'notification') {
+          const newNotif: Notification = {
+            id: data.notification?.id || Date.now(),
+            title: data.notification?.title || data.title || '',
+            message: data.notification?.message || data.message || '',
+            notification_type: data.notification?.notification_type || 'general',
+            is_read: false,
+            created_at: new Date().toISOString(),
+          };
+          setNotifications(prev => [newNotif, ...prev]);
+          toast(newNotif.title || 'New notification', { icon: '🔔' });
         }
       } catch (err) {
-        console.error('Failed to parse notification message', err);
+        console.error('Failed to parse notification WS message', err);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('Notification WebSocket error:', error);
-    };
+    ws.onerror = () => {};
 
     ws.onclose = () => {
       console.log('Notification WebSocket closed, reconnecting in 5s...');
@@ -187,50 +172,66 @@ export default function NotificationDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 bg-slate-900 shadow-2xl shadow-black rounded-2xl overflow-hidden border border-slate-600 z-50 ring-1 ring-black/5">
-          <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
-            <span className="font-semibold text-white">Notifications</span>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={fetchNotifications}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-              >
-                Refresh
-              </button>
-              <button
-                onClick={() => {
-                  markAllUnreadOnOpen();
-                }}
-                className="text-xs text-slate-400 hover:text-white transition-colors"
-              >
-                Mark all read
-              </button>
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-[55] sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Dropdown panel — mobile: centered fixed; desktop: absolute right */}
+          <div
+            className="
+              fixed left-3 right-3 top-16 z-[60]
+              sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-80
+              bg-slate-900 shadow-2xl shadow-black/50 rounded-2xl overflow-hidden border border-slate-600 ring-1 ring-black/5
+            "
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+              <span className="font-semibold text-white">Notifications</span>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={fetchNotifications}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    markAllUnreadOnOpen();
+                  }}
+                  className="text-xs text-slate-400 hover:text-white transition-colors"
+                >
+                  Mark all read
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto custom-scrollbar bg-slate-900">
+              {loading ? (
+                <div className="p-8 text-center text-slate-500">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 flex flex-col items-center gap-2">
+                  <Bell size={24} className="opacity-20" />
+                  <p>No notifications yet</p>
+                </div>
+              ) : (
+                notifications.slice(0, 5).map(notification => (
+                  <div key={notification.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/50 transition-colors">
+                    <NotificationItem notification={notification} />
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-3 bg-slate-900 border-t border-slate-700 text-center">
+              <a href="/notifications" onClick={() => setIsOpen(false)} className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors block w-full">
+                See More
+              </a>
             </div>
           </div>
-
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar bg-slate-900">
-            {loading ? (
-              <div className="p-8 text-center text-slate-500">Loading...</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 flex flex-col items-center gap-2">
-                <Bell size={24} className="opacity-20" />
-                <p>No notifications yet</p>
-              </div>
-            ) : (
-              notifications.slice(0, 5).map(notification => (
-                <div key={notification.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/50 transition-colors">
-                  <NotificationItem notification={notification} />
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="p-3 bg-slate-900 border-t border-slate-700 text-center">
-            <a href="/notifications" onClick={() => setIsOpen(false)} className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors block w-full">
-              See More
-            </a>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

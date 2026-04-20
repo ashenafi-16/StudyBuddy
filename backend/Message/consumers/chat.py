@@ -119,6 +119,13 @@ class ChatConsumer(
                 file_url = msg.file_attachment.url
             else:
                 file_url = str(msg.file_attachment)
+            
+            # Fix non-image file URLs (PDF, docs, etc.) to use raw/upload
+            if file_url:
+                non_image_exts = ('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.txt', '.csv')
+                file_name = (msg.file_name or '').lower()
+                if any(file_name.endswith(ext) for ext in non_image_exts):
+                    file_url = file_url.replace('/image/upload/', '/raw/upload/')
         
         sender = msg.sender
         profile_pic_url = None

@@ -59,19 +59,26 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         
         # Check if it's already a full URL
         if file_value.startswith('http://') or file_value.startswith('https://'):
+            # Fix: if it's a non-image file served via image/upload, switch to raw/upload
+            non_image_exts = ('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.txt', '.csv')
+            file_name = (obj.file_name or '').lower()
+            if any(file_name.endswith(ext) for ext in non_image_exts):
+                file_value = file_value.replace('/image/upload/', '/raw/upload/')
             return file_value
         
         # It's a public_id, build the full Cloudinary URL
         import cloudinary.utils
         
         try:
-            # Use cloudinary_url to build the full URL from public_id
-            url, options = cloudinary.utils.cloudinary_url(file_value)
-            print(f"✅ Built Cloudinary URL from '{file_value}' -> '{url}'")
+            # Determine resource_type based on file name
+            file_name = (obj.file_name or '').lower()
+            non_image_exts = ('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar', '.txt', '.csv')
+            resource_type = 'raw' if any(file_name.endswith(ext) for ext in non_image_exts) else 'image'
+            
+            url, options = cloudinary.utils.cloudinary_url(file_value, resource_type=resource_type)
             return url
         except Exception as e:
-            print(f"❌ Error building Cloudinary URL for '{file_value}': {e}")
-            # Fallback: return the raw value
+            print(f"Error building Cloudinary URL for '{file_value}': {e}")
             return file_value
 
     def get_file_info(self, obj):

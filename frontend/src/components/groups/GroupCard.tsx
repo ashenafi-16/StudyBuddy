@@ -12,6 +12,7 @@ interface GroupCardProps {
 export default function GroupCard({ group, onJoin, isJoining }: GroupCardProps) {
     const typeColor = getGroupTypeColor(group.group_type);
 
+    console.log(group.id, "here is the group id")
     return (
         <div className="group h-full">
             <div className="bg-[#1e293b]/30 border border-slate-800 hover:border-slate-700 transition-all duration-300 rounded-2xl overflow-hidden h-full flex flex-col">

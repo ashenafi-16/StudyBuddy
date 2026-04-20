@@ -78,7 +78,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
 
             <div
               onClick={handleProfileClick}
-              className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 border-2 border-[#1e293b] relative"
+              className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 border-2 border-[#1e293b] relative overflow-hidden"
             >
               {profile_pic_url ? (
                 <img
