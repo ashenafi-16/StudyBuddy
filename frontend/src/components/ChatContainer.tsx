@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useWebSocket } from "../hooks/useWebSocket";
@@ -13,21 +13,37 @@ interface ChatContainerProps {
 }
 
 function ChatContainer({ onBackClick }: ChatContainerProps) {
-  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo, typingUsers } =
+  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo, typingUsers, setUserTyping, clearUserTyping } =
     useChatStore();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<number | string | null>(null);
 
-  // Connect to WebSocket for real-time messages
-  useWebSocket({
+  // Handle typing events from chat WebSocket
+  const handleTypingIndicator = useCallback((userId: number, isTyping: boolean) => {
+    if (isTyping) {
+      setUserTyping(userId);
+      // Auto-clear after 3 seconds
+      setTimeout(() => clearUserTyping(userId), 3000);
+    } else {
+      clearUserTyping(userId);
+    }
+  }, [setUserTyping, clearUserTyping]);
+
+  // Connect to WebSocket for real-time messages + typing
+  const { sendTypingIndicator } = useWebSocket({
     conversationId: selectedUser?.id || null,
     onMessageReceived: handleWebSocketMessage,
+    onTypingIndicator: handleTypingIndicator,
   });
 
   useEffect(() => {
     if (selectedUser?.id) {
       getMessageByConvId(selectedUser.id);
+      // Mark messages as read when opening a conversation
+      import('../services/api').then(({ default: api }) => {
+        api.post('/messages/mark_read/', { conversation_id: selectedUser.id }).catch(() => {});
+      });
     }
   }, [selectedUser, getMessageByConvId]);
 
@@ -202,9 +218,16 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
                           })}
                         </span>
                         {isOwn && (
-                          <svg className="w-3.5 h-3.5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
+                          msg.is_read ? (
+                            <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12l5 5L17 6" />
+                              <path d="M7 12l5 5L23 6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )
                         )}
                       </div>
                     </div>
@@ -245,7 +268,7 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
         )}
       </div>
 
-      <MessageInput />
+      <MessageInput onTyping={sendTypingIndicator} />
     </div>
   );
 }

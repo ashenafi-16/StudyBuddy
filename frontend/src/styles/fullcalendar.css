@@ -87,13 +87,13 @@
   }
 
   .fc .fc-toolbar-title {
-    font-size: 1rem;
+    font-size: 1.05rem;
     text-align: center;
   }
 
   .fc .fc-button {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
   }
 
   .fc .fc-toolbar-chunk {
@@ -102,21 +102,26 @@
   }
 
   .fc .fc-daygrid-day-number {
-    font-size: 0.75rem;
-    padding: 2px 4px;
+    font-size: 0.85rem;
+    padding: 4px 6px;
   }
 
   .fc .fc-col-header-cell-cushion {
-    font-size: 0.7rem;
-    padding: 4px 2px;
+    font-size: 0.8rem;
+    padding: 6px 4px;
   }
 
   .fc .fc-event {
-    font-size: 0.65rem;
-    padding: 1px 3px;
+    font-size: 0.75rem;
+    padding: 2px 5px;
   }
 
   .fc .fc-daygrid-day-frame {
-    min-height: 3rem;
+    min-height: 3.5rem;
+  }
+
+  /* Ensure day numbers and content are readable */
+  .fc .fc-daygrid-day-top {
+    padding: 2px;
   }
 }

@@ -23,6 +23,7 @@ export interface Message {
   timestamp: string;
   sender: User;
   conversation_id?: number;
+  is_read?: boolean;
   reply_to?: number | null;
   reply_to_info?: {
     message_id: number;

@@ -1,16 +1,19 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
 import { Paperclip, Send, X, FileText, Reply } from "lucide-react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useAuth } from "../contexts/AuthContext";
 
-const MessageInput = () => {
+interface MessageInputProps {
+  onTyping?: (isTyping: boolean) => void;
+}
+
+const MessageInput = ({ onTyping }: MessageInputProps) => {
   const { user } = useAuth();
   const { playRandomKeyStrokeSound } = useKeyboardSound();
 
   const sendMessage = useChatStore((s) => s.sendMessage);
-  const sendTyping = useChatStore((s) => s.sendTyping);
   const isSoundEnabled = useChatStore((s) => s.isSoundEnabled);
   const replyToMessage = useChatStore((s) => s.replyToMessage);
   const clearReplyTo = useChatStore((s) => s.clearReplyTo);
@@ -21,6 +24,24 @@ const MessageInput = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced typing indicator
+  const emitTyping = useCallback(() => {
+    if (!onTyping) return;
+
+    onTyping(true);
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set stop-typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      onTyping(false);
+    }, 2000);
+  }, [onTyping]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +75,7 @@ const MessageInput = () => {
 
   const handleTyping = (value: string) => {
     setText(value);
-    sendTyping();
+    emitTyping();
 
     if (isSoundEnabled) {
       playRandomKeyStrokeSound();

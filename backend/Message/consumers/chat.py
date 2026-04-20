@@ -136,6 +136,7 @@ class ChatConsumer(
             "file_attachment": file_url,
             "timestamp": msg.timestamp.isoformat(),
             "is_edited": msg.is_edited,
+            "is_read": msg.is_read,
             "edited_at": msg.edited_at.isoformat() if msg.edited_at else None,
             "reply_to": msg.reply_to_id,
             "file_info": {
