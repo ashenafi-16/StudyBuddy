@@ -90,7 +90,6 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 getInitials()
               )}
               {/* Online Indicator */}
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#1e293b]"></div>
             </div>
           </div>
         </div>

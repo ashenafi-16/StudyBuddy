@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Check, Star, Shield, Zap, AlertCircle, Loader2 } from "lucide-react";
-import { fetchSubscriptionPlans, subscribeToPlan, verifyPayment, type SubscriptionPlan } from "../api/subscriptionApi";
+import { Check, Star, Shield, Zap, AlertCircle } from "lucide-react";
+import { fetchSubscriptionPlans, verifyPayment, type SubscriptionPlan } from "../api/subscriptionApi";
 import { Loading } from "../components/common/LoadingError";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 export default function SubscriptionPage() {
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [loading, setLoading] = useState(true);
-    const [processingId, setProcessingId] = useState<number | null>(null);
     const { loadProfile, subscriptions } = useAuth();
     const navigate = useNavigate();
 
@@ -61,23 +60,7 @@ export default function SubscriptionPage() {
         }
     };
 
-    const handleSubscribe = async (plan: SubscriptionPlan) => {
-        try {
-            setProcessingId(plan.id);
-            const response = await subscribeToPlan(plan.id);
 
-            // Redirect to Chapa checkout
-            if (response.checkout_url) {
-                window.location.href = response.checkout_url;
-            } else {
-                toast.error("Failed to initialize payment");
-            }
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Failed to start subscription");
-        } finally {
-            setProcessingId(null);
-        }
-    };
 
     if (loading) return <Loading />;
 
@@ -130,9 +113,7 @@ export default function SubscriptionPage() {
                                 key={plan.id}
                                 className={`relative rounded-2xl p-8 transition-all duration-300 flex flex-col h-full ${isCurrentPlan
                                     ? 'bg-slate-800/80 border-2 border-emerald-500 shadow-xl shadow-emerald-500/20 ring-4 ring-emerald-500/10'
-                                    : plan.is_popular
-                                        ? 'bg-slate-800/80 border-2 border-cyan-500 transform lg:-translate-y-4 shadow-xl shadow-cyan-500/20'
-                                        : 'bg-slate-800/40 border border-slate-700 hover:border-slate-600'
+                                    : 'bg-slate-800/30 border border-slate-700/50'
                                     }`}
                             >
                                 {plan.is_popular && (
@@ -172,26 +153,15 @@ export default function SubscriptionPage() {
                                         ))}
                                     </ul>
 
-                                    <button
-                                        onClick={() => handleSubscribe(plan)}
-                                        disabled={processingId !== null || isCurrentPlan}
-                                        className={`w-full py-4 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isCurrentPlan
-                                            ? 'bg-slate-700 text-slate-400 cursor-default'
-                                            : plan.is_popular
-                                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'
-                                                : 'bg-white text-slate-900 hover:bg-slate-200'
-                                            }`}
-                                    >
-                                        {processingId === plan.id ? (
-                                            <Loader2 className="animate-spin" size={20} />
-                                        ) : isCurrentPlan ? (
-                                            "Current Plan"
-                                        ) : (
-                                            <>
-                                                Get {plan.name} <Zap size={18} />
-                                            </>
-                                        )}
-                                    </button>
+                                    {isCurrentPlan && (
+                                        <button
+                                            disabled
+                                            className="w-full py-4 px-6 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default flex items-center justify-center gap-2"
+                                        >
+                                            <Shield size={18} />
+                                            Current Plan
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );

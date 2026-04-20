@@ -159,7 +159,7 @@ const GroupDetailPage = () => {
                             : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                         }`}>
                         {member.role === 'admin' && <Shield size={12} />}
-                        {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                        {(member.role || 'member').charAt(0).toUpperCase() + (member.role || 'member').slice(1)}
                     </span>
                     {canRemove && (
                         <button
@@ -396,7 +396,7 @@ const GroupDetailPage = () => {
                         </h3>
                         <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-500/10">
                             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center text-yellow-300 font-bold text-xl border border-yellow-500/30">
-                                {group.created_by_name?.charAt(0).toUpperCase() || group.created_by.username?.charAt(0).toUpperCase() || '?'}
+                                {(group.created_by_name || group.created_by?.username || group.created_by?.full_name || '?').charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <p className="text-white font-semibold text-lg">{group.created_by_name || group.created_by.username || group.created_by.full_name}</p>
@@ -449,7 +449,7 @@ const GroupDetailPage = () => {
                                     group.user_role === 'moderator' ? 'text-orange-400' :
                                         group.user_role ? 'text-blue-400' : 'text-gray-500'
                                     }`}>
-                                    {group.user_role ? group.user_role.charAt(0).toUpperCase() + group.user_role.slice(1) : 'Not a member'}
+                                    {group.user_role ? (group.user_role).charAt(0).toUpperCase() + (group.user_role).slice(1) : 'Not a member'}
                                 </span>
                             </div>
                         </div>
