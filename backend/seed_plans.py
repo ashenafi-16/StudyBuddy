@@ -16,7 +16,7 @@ def seed_plans():
             "price": 100.00,
             "currency": "ETB",
             "duration_days": 30,
-            "features": ["Unlimited groups", "AI recommendations", "Full Pomodoro statistics", "Priority support"],
+            "features": ["Unlimited groups", "Advanced analytics", "Full Pomodoro statistics", "Priority support"],
             "is_active": True,
             "is_popular": False
         },
@@ -27,7 +27,7 @@ def seed_plans():
             "price": 250.00,
             "currency": "ETB",
             "duration_days": 90,
-            "features": ["Unlimited groups", "AI recommendations", "Full Pomodoro statistics", "Priority support", "Exclusive study materials"],
+            "features": ["Unlimited groups", "Advanced analytics", "Full Pomodoro statistics", "Priority support", "Exclusive study materials"],
             "is_active": True,
             "is_popular": True
         },
@@ -38,7 +38,7 @@ def seed_plans():
             "price": 450.00,
             "currency": "ETB",
             "duration_days": 180,
-            "features": ["Unlimited groups", "AI recommendations", "Full Pomodoro statistics", "Priority support", "Exclusive study materials", "1-on-1 AI tutoring"],
+            "features": ["Unlimited groups", "Advanced analytics", "Full Pomodoro statistics", "Priority support", "Exclusive study materials", "Group video sessions"],
             "is_active": True,
             "is_popular": False
         },
@@ -49,7 +49,7 @@ def seed_plans():
             "price": 800.00,
             "currency": "ETB",
             "duration_days": 365,
-            "features": ["Unlimited groups", "AI recommendations", "Full Pomodoro statistics", "Priority support", "Exclusive study materials", "1-on-1 AI tutoring", "Certificates of completion"],
+            "features": ["Unlimited groups", "Advanced analytics", "Full Pomodoro statistics", "Priority support", "Exclusive study materials", "Group video sessions", "Certificates of completion"],
             "is_active": True,
             "is_popular": False
         }

@@ -77,3 +77,46 @@
 .fc-theme-standard .fc-scrollgrid {
   border-color: #334155;
 }
+
+/* ─── Mobile-specific responsiveness ─── */
+@media (max-width: 640px) {
+  .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .fc .fc-button {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: 0.75rem;
+    padding: 2px 4px;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.7rem;
+    padding: 4px 2px;
+  }
+
+  .fc .fc-event {
+    font-size: 0.65rem;
+    padding: 1px 3px;
+  }
+
+  .fc .fc-daygrid-day-frame {
+    min-height: 3rem;
+  }
+}

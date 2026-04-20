@@ -13,7 +13,7 @@ interface ChatContainerProps {
 }
 
 function ChatContainer({ onBackClick }: ChatContainerProps) {
-  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo } =
+  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo, typingUsers } =
     useChatStore();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,14 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
   }, [messages]);
 
   const isGroup = !!selectedUser?.group_name;
+
+  // Determine if someone is typing
+  const typingUserIds = isGroup
+    ? selectedUser?.members?.filter((m: any) => m.id !== user?.id && typingUsers.has(m.id)) || []
+    : [];
+  const otherUser = !isGroup ? selectedUser?.members?.find((m: any) => m.id !== user?.id) : null;
+  const isOtherTyping = !isGroup && otherUser && typingUsers.has(otherUser.id);
+  const showTyping = isGroup ? typingUserIds.length > 0 : isOtherTyping;
 
   // Find the replied-to message content
   const getReplyInfo = (msg: any) => {
@@ -215,6 +223,23 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
                 </div>
               );
             })}
+
+            {/* Typing Indicator Bubble */}
+            {showTyping && (
+              <div className="flex justify-start mt-2">
+                <div className="w-8 flex-shrink-0 mr-2 self-end" />
+                <div className="bg-[#1e2533] rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex gap-[3px]">
+                      <span className="w-[6px] h-[6px] bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-[6px] h-[6px] bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-[6px] h-[6px] bg-slate-400 rounded-full animate-bounce" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         )}

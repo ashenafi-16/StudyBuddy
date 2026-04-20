@@ -91,7 +91,7 @@ export default function SubscriptionPage() {
                         Unlock Your Full Potential with <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Premium</span>
                     </h1>
                     <p className="text-lg text-slate-400">
-                        Get unlimited access to advanced study tools, AI-powered recommendations, and exclusive resources.
+                        Get unlimited access to advanced study tools, premium features, and exclusive resources.
                     </p>
                 </div>
 

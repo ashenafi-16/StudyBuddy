@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import api from "../../api/apiClient";
 import { WS_BASE } from "../../api/apiClient";
 import NotificationItem from "./NotificationItem";
+import toast from "react-hot-toast";
 
 interface Notification {
   id: number;
@@ -126,6 +127,17 @@ export default function NotificationDropdown() {
           // Real-time notification from Pomodoro lifecycle
           const notification = data.notification;
           setNotifications(prev => [notification, ...prev]);
+          // Show toast for new notifications
+          toast(notification.title || 'New notification', {
+            icon: '🔔',
+            style: {
+              background: '#1e293b',
+              color: '#f8fafc',
+              border: '1px solid #334155',
+              borderRadius: '12px',
+            },
+            duration: 4000,
+          });
         }
       } catch (err) {
         console.error('Failed to parse notification message', err);

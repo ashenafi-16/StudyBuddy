@@ -9,7 +9,7 @@ interface ChatsListProps {
 }
 
 function ChatsList({ searchQuery = "" }: ChatsListProps) {
-  const { getAllIndividualContacts, chats = [], isUsersLoading, setSelectedUser, selectedUser, onlineUsers } = useChatStore();
+  const { getAllIndividualContacts, chats = [], isUsersLoading, setSelectedUser, selectedUser, onlineUsers, typingUsers } = useChatStore();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -36,6 +36,7 @@ function ChatsList({ searchQuery = "" }: ChatsListProps) {
 
         const isActive = selectedUser?.id === chat.id;
         const isOnline = onlineUsers instanceof Set && onlineUsers.has(otherUser.id);
+        const isTyping = typingUsers instanceof Set && typingUsers.has(otherUser.id);
 
         return (
           <button
@@ -78,9 +79,18 @@ function ChatsList({ searchQuery = "" }: ChatsListProps) {
                 )}
               </div>
               <div className="flex items-center justify-between gap-2 mt-0.5">
-                <p className={`text-[12px] truncate ${isActive ? 'text-indigo-300/70' : 'text-slate-500'
+                <p className={`text-[12px] truncate ${isActive ? 'text-indigo-300/70' : isTyping ? 'text-indigo-400' : 'text-slate-500'
                   }`}>
-                  {isOnline ? 'Online' : 'Offline'}
+                  {isTyping ? (
+                    <span className="flex items-center gap-1">
+                      <span className="flex gap-[2px]">
+                        <span className="w-[4px] h-[4px] bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                        <span className="w-[4px] h-[4px] bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-[4px] h-[4px] bg-indigo-400 rounded-full animate-bounce" />
+                      </span>
+                      typing
+                    </span>
+                  ) : isOnline ? 'Online' : 'Offline'}
                 </p>
                 {chat.unread_count > 0 && !isActive && (
                   <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
