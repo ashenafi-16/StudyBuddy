@@ -19,7 +19,6 @@ export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [marking, setMarking] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
@@ -44,22 +43,6 @@ export default function NotificationDropdown() {
     } catch (err) {
       console.error("Failed to load unread notifications", err);
       return [];
-    }
-  };
-
-  // Mark single notification as read on server and update local state
-  const markAsRead = async (id: number) => {
-    if (marking) return;
-    setMarking(true);
-    try {
-      await api.post(`/notifications/${id}/mark_read/`);
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
-      );
-    } catch (err) {
-      console.error("Failed to mark notification as read", err);
-    } finally {
-      setMarking(false);
     }
   };
 
