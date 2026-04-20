@@ -61,7 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         {/* Right Section */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative z-[60]">
             <NotificationDropdown />
           </div>
 

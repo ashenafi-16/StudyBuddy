@@ -87,6 +87,7 @@ interface ChatStoreState {
   connectPresenceSocket: (token: string) => void;
   sendMessage: (data: SendMessageInput) => Promise<void>;
   handleWebSocketMessage: (message: Message) => void;
+  markMessagesAsRead: (messageIds: (number | string)[]) => void;
 }
 export const useChatStore = create<ChatStoreState>((set, get) => ({
   allContacts: [],
@@ -179,6 +180,15 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
       const updated = new Set(state.typingUsers);
       updated.delete(userId);
       return { typingUsers: updated };
+    }),
+
+  markMessagesAsRead: (messageIds) =>
+    set(state => {
+      const idSet = new Set(messageIds.map(id => String(id)));
+      const updated = state.messages.map(msg =>
+        idSet.has(String(msg.id)) ? { ...msg, is_read: true } : msg
+      );
+      return { messages: updated };
     }),
 
   isSoundEnabled:

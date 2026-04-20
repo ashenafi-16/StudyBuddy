@@ -89,7 +89,7 @@ function ChatPage() {
 
     return (
         <div className="w-full h-full flex items-stretch">
-            <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0a0e1a]">
+            <div className="relative w-full h-full overflow-hidden bg-[#0a0e1a]">
                 <div className="flex h-full w-full relative">
 
                     {/* MOBILE OVERLAY */}

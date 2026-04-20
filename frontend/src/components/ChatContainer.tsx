@@ -13,7 +13,7 @@ interface ChatContainerProps {
 }
 
 function ChatContainer({ onBackClick }: ChatContainerProps) {
-  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo, typingUsers, setUserTyping, clearUserTyping } =
+  const { selectedUser, messages, getMessageByConvId, isMessagesLoading, handleWebSocketMessage, setReplyTo, typingUsers, setUserTyping, clearUserTyping, markMessagesAsRead } =
     useChatStore();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -30,18 +30,24 @@ function ChatContainer({ onBackClick }: ChatContainerProps) {
     }
   }, [setUserTyping, clearUserTyping]);
 
-  // Connect to WebSocket for real-time messages + typing
+  // Handle read receipt events from chat WebSocket
+  const handleReadReceipt = useCallback((messageIds: number[]) => {
+    markMessagesAsRead(messageIds);
+  }, [markMessagesAsRead]);
+
+  // Connect to WebSocket for real-time messages + typing + read receipts
   const { sendTypingIndicator } = useWebSocket({
     conversationId: selectedUser?.id || null,
     onMessageReceived: handleWebSocketMessage,
     onTypingIndicator: handleTypingIndicator,
+    onReadReceipt: handleReadReceipt,
   });
 
   useEffect(() => {
     if (selectedUser?.id) {
       getMessageByConvId(selectedUser.id);
       // Mark messages as read when opening a conversation
-      import('../services/api').then(({ default: api }) => {
+      import('../api/apiClient').then(({ default: api }) => {
         api.post('/messages/mark_read/', { conversation_id: selectedUser.id }).catch(() => {});
       });
     }

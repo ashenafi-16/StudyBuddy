@@ -8,6 +8,7 @@ interface UseWebSocketProps {
     onMessageReceived?: (message: Message) => void;
     onTypingIndicator?: (userId: number, isTyping: boolean) => void;
     onPresenceUpdate?: (userId: number, status: string) => void;
+    onReadReceipt?: (messageIds: number[]) => void;
 }
 
 export const useWebSocket = ({
@@ -15,6 +16,7 @@ export const useWebSocket = ({
     onMessageReceived,
     onTypingIndicator,
     onPresenceUpdate,
+    onReadReceipt,
 }: UseWebSocketProps) => {
     const { user } = useAuth();
     const wsRef = useRef<WebSocket | null>(null);
@@ -53,6 +55,12 @@ export const useWebSocket = ({
                                 onMessageReceived?.(data.data);
                             }
                             break;
+
+                        case 'read_receipt':
+                            if (data.message_ids) {
+                                onReadReceipt?.(data.message_ids);
+                            }
+                            break;
                     }
                 } catch (error) {
                     console.error('Failed to parse WebSocket message:', error);
@@ -83,7 +91,7 @@ export const useWebSocket = ({
         } catch (error) {
             console.error('Failed to create WebSocket connection:', error);
         }
-    }, [conversationId, user?.token, onMessageReceived, onTypingIndicator, onPresenceUpdate]);
+    }, [conversationId, user?.token, onMessageReceived, onTypingIndicator, onPresenceUpdate, onReadReceipt]);
 
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {

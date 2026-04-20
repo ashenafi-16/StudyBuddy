@@ -93,6 +93,14 @@ class ChatConsumer(
             "status": event["status"],
         })
 
+    async def read_receipt(self, event):
+        """Broadcast read receipt to all clients in the conversation."""
+        await self.send_json({
+            "type": "read_receipt",
+            "message_ids": event["message_ids"],
+            "reader_id": event["reader_id"],
+        })
+
 
     @database_sync_to_async
     def _create_text_message(self, text):

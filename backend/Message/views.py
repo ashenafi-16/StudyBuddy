@@ -201,10 +201,35 @@ class MessageViewSet(viewsets.ModelViewSet):
         if not conversation_id:
             return Response({"error": "conversation_id is required"}, status=400)
 
-        updated = Message.objects.filter(
-            conversation_id=conversation_id,
-            is_read=False,
-        ).exclude(sender=request.user).update(is_read=True)
+        # Get the IDs of messages being marked as read
+        unread_ids = list(
+            Message.objects.filter(
+                conversation_id=conversation_id,
+                is_read=False,
+            ).exclude(sender=request.user).values_list('id', flat=True)
+        )
+
+        if not unread_ids:
+            return Response({"marked": 0})
+
+        # Update in DB
+        updated = Message.objects.filter(id__in=unread_ids).update(is_read=True)
+
+        # Broadcast read receipt to the conversation via WebSocket
+        try:
+            channel_layer = get_channel_layer()
+            room_name = f"chat_{conversation_id}"
+            async_to_sync(channel_layer.group_send)(
+                room_name,
+                {
+                    "type": "read.receipt",
+                    "message_ids": unread_ids,
+                    "reader_id": request.user.id,
+                }
+            )
+        except Exception as e:
+            # Log but don't fail the request
+            print(f"Failed to broadcast read receipt: {e}")
 
         return Response({"marked": updated})
 
