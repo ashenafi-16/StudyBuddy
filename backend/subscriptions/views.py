@@ -218,26 +218,47 @@ class SubscriptionViewSet(viewsets.ViewSet):
 class ChapaWebhookView(APIView):
     permission_classes = []
 
+    def get(self, request):
+        """Handle Chapa GET callback (redirect after payment)"""
+        # Chapa sends trx_ref (not tx_ref) in GET callbacks
+        tx_ref = request.query_params.get('trx_ref') or request.query_params.get('tx_ref')
+        if not tx_ref:
+            return HttpResponse("Missing transaction reference", status=400)
+
+        return self._process_payment(tx_ref)
+
     def post(self, request):
+        """Handle Chapa POST webhook (server-to-server)"""
         try:
-            signature = request.headers.get('Chapa-Signature')
-            payload = request.body
+            webhook_secret = getattr(settings, 'CHAPA_WEBHOOK_SECRET', None)
+            if webhook_secret:
+                signature = request.headers.get('Chapa-Signature')
+                payload = request.body
 
-            computed_signature = hmac.new(
-                settings.CHAPA_WEBHOOK_SECRET.encode(),
-                payload,
-                hashlib.sha256
-            ).hexdigest()
+                computed_signature = hmac.new(
+                    webhook_secret.encode(),
+                    payload,
+                    hashlib.sha256
+                ).hexdigest()
 
-            if signature != computed_signature:
-                return HttpResponse(status=400)
+                if signature != computed_signature:
+                    return HttpResponse(status=400)
 
-            data = json.loads(payload)
-            tx_ref = data.get('tx_ref')
+            data = json.loads(request.body)
+            tx_ref = data.get('tx_ref') or data.get('trx_ref')
 
             if not tx_ref:
                 return HttpResponse(status=400)
 
+            return self._process_payment(tx_ref)
+
+        except Exception as e:
+            print("Webhook error:", e)
+            return HttpResponse(status=500)
+
+    def _process_payment(self, tx_ref):
+        """Common payment processing logic"""
+        try:
             result = chapa_service.verify_payment(tx_ref)
 
             if result['success'] and result['verified']:
@@ -254,5 +275,5 @@ class ChapaWebhookView(APIView):
             return HttpResponse(status=200)
 
         except Exception as e:
-            print("Webhook error:", e)
+            print("Payment processing error:", e)
             return HttpResponse(status=500)
