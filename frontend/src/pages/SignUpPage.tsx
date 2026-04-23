@@ -22,7 +22,7 @@ const SignUpPage: React.FC = () => {
             const result = await (register as any)(formData.email, formData.password, formData.username);
             if (result.success) {
                 toast.success("Account created successfully!")
-                navigate("/");
+                navigate("/dashboard");
             } else {
                 toast.error(result.message || "Registration failed");
                 setError(result.message || "Registration failed");

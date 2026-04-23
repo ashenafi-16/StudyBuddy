@@ -78,9 +78,16 @@ const GroupDetailPage = () => {
 
         setActionLoading(true);
         try {
-            await groupService.leaveGroup(group.id.toString());
-            toast.success("Left the group.");
-            await fetchGroupData();
+            const response = await groupService.leaveGroup(group.id.toString());
+            
+            if (response.message === "Group deleted as you were the last member.") {
+                toast.success(response.message);
+                navigate('/groups');
+            } else {
+                toast.success("Left the group.");
+                // Redirect away if it's a private group or always for better UX
+                navigate('/groups');
+            }
         } catch (error: any) {
             console.error("Leave error:", error);
             const msg = error.response?.data?.error || "Failed to leave group.";
@@ -282,13 +289,15 @@ const GroupDetailPage = () => {
                                     <MessageCircle size={20} />
                                     Group Chat
                                 </button>
-                                <Link
-                                    to={`/groups/${group.id}/analytics`}
-                                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700/50 hover:bg-gray-700 text-white rounded-xl font-medium transition-all border border-gray-600/50 hover:border-gray-500"
-                                >
-                                    <BarChart2 size={18} />
-                                    Analytics
-                                </Link>
+                                {isCreator && (
+                                    <Link
+                                        to={`/groups/${group.id}/analytics`}
+                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700/50 hover:bg-gray-700 text-white rounded-xl font-medium transition-all border border-gray-600/50 hover:border-gray-500"
+                                    >
+                                        <BarChart2 size={18} />
+                                        Analytics
+                                    </Link>
+                                )}
                                 <button
                                     onClick={handleLeave}
                                     disabled={actionLoading}

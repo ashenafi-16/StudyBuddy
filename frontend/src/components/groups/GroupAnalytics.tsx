@@ -23,7 +23,8 @@ export default function GroupAnalyticsComponent() {
             const data = await fetchGroupAnalytics(Number(id));
             setAnalytics(data);
         } catch (err: any) {
-            setError(err.message || 'Failed to load analytics');
+            const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to load analytics';
+            setError(msg);
         } finally {
             setLoading(false);
         }

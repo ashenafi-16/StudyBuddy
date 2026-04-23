@@ -10,6 +10,7 @@ from .serializers import (
     GroupMemberCreateSerializer
 )
 from django.db.models import Q
+from django.db import transaction
 from Notifications.models import Notification
 from rest_framework.decorators import action
 from datetime import timezone
@@ -187,28 +188,53 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def leave(self, request, pk=None):
         group = self.get_object()
+        user = request.user
 
-        member = GroupMember.objects.filter(
-            user=request.user,
-            group=group,
-            is_active = True
-        ).first()
+        try:
+            with transaction.atomic():
+                member = GroupMember.objects.filter(
+                    user=user,
+                    group=group,
+                    is_active=True
+                ).select_for_update().first()
 
-        if not member:
+                if not member:
+                    return Response(
+                        {"error": "You are not a member of this group."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                is_owner = (group.created_by == user)
+                
+                if is_owner:
+                    # Look for other active members to transfer ownership
+                    other_member = GroupMember.objects.filter(
+                        group=group,
+                        is_active=True
+                    ).exclude(user=user).order_by('joined_at').first()
+
+                    if other_member:
+                        # Transfer ownership to the next earliest member
+                        group.created_by = other_member.user
+                        group.save()
+                    else:
+                        # Owner is the only member, delete the group
+                        group.delete()
+                        return Response(
+                            {"message": "Group deleted as you were the last member."},
+                            status=status.HTTP_200_OK
+                        )
+
+                # Soft delete current member
+                member.is_active = False
+                member.save()
+
+                return Response({"message": "Successfully left the group."})
+        except Exception as e:
             return Response(
-                {"error": "You are not a member of this group."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-        if member.user == group.created_by:
-            # For simplicity, we'll allow the creator to leave but note that 
-            # the group might become ownerless if they are the only person.
-            # However, the user said "remove role at all", so we'll just remove the restriction.
-            pass
-        member.is_active = False
-        member.save()
-
-        return Response({"message": "Successfully left the group."})
         
     @action(detail=True, methods=['get'])
     def members(self, request, pk=None):
@@ -221,6 +247,10 @@ class StudyGroupViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def analytics(self, request, pk=None):
         group = self.get_object()
+        
+        # Only the creator can view analytics
+        if group.created_by != request.user:
+            raise PermissionDenied("Only the group creator can access analytics.")
 
         total_members = group.members.filter(is_active=True).count()
         

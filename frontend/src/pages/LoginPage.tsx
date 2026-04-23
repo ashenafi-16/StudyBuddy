@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
                 if (redirectTo) {
                     navigate(decodeURIComponent(redirectTo));
                 } else {
-                    navigate("/");
+                    navigate("/dashboard");
                 }
             } else {
                 toast.error(result.message || "Login failed");

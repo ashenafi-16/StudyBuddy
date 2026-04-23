@@ -80,9 +80,9 @@ function SignupRedirect() {
 // ── Landing page with auth-aware redirect ────────────────────
 
 function LandingRedirect() {
-  const { isAuthenticated, isPremium } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  if (isAuthenticated && isPremium) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 

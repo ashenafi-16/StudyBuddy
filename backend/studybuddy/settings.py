@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     'pomodoro',
     'subscriptions',
     'studytracker',
+    'django_extensions',
+    'drf_spectacular',
 ]
 SITE_ID = 1
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -345,4 +347,13 @@ CELERY_BROKER_USE_SSL = {
 
 CELERY_REDIS_BACKEND_USE_SSL = {
     "ssl_cert_reqs": ssl.CERT_NONE,
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'StudyBuddy API',
+    'DESCRIPTION': 'API documentation for StudyBuddy Project',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,
+    },
 }
