@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     'subscriptions',
     'studytracker',
     'django_extensions',
-    'drf_spectacular',
 ]
 SITE_ID = 1
 AUTH_USER_MODEL = 'accounts.CustomUser'
