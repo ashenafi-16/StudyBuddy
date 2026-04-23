@@ -163,36 +163,44 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard
-            icon={Users}
-            label="Study Groups"
-            value={groupsJoined}
-            color="text-blue-400"
-            gradient="from-blue-900/40 to-blue-800/20"
-          />
-          <StatCard
-            icon={MessageCircle}
-            label="Messages Sent"
-            value={messagesSent}
-            color="text-purple-400"
-            gradient="from-purple-900/40 to-purple-800/20"
-          />
-          <StatCard
-            icon={Target}
-            label="Tasks Done"
-            value={tasksCompleted}
-            color="text-emerald-400"
-            gradient="from-emerald-900/40 to-emerald-800/20"
-          />
-          <StatCard
-            icon={FileText}
-            label="Files Shared"
-            value={filesUploaded}
-            color="text-orange-400"
-            gradient="from-orange-900/40 to-orange-800/20"
-          />
+        {/* Stats Grid — scrollable on mobile */}
+        <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="min-w-[160px] flex-shrink-0 sm:min-w-0 sm:flex-shrink">
+            <StatCard
+              icon={Users}
+              label="Study Groups"
+              value={groupsJoined}
+              color="text-blue-400"
+              gradient="from-blue-900/40 to-blue-800/20"
+            />
+          </div>
+          <div className="min-w-[160px] flex-shrink-0 sm:min-w-0 sm:flex-shrink">
+            <StatCard
+              icon={MessageCircle}
+              label="Messages Sent"
+              value={messagesSent}
+              color="text-purple-400"
+              gradient="from-purple-900/40 to-purple-800/20"
+            />
+          </div>
+          <div className="min-w-[160px] flex-shrink-0 sm:min-w-0 sm:flex-shrink">
+            <StatCard
+              icon={Target}
+              label="Tasks Done"
+              value={tasksCompleted}
+              color="text-emerald-400"
+              gradient="from-emerald-900/40 to-emerald-800/20"
+            />
+          </div>
+          <div className="min-w-[160px] flex-shrink-0 sm:min-w-0 sm:flex-shrink">
+            <StatCard
+              icon={FileText}
+              label="Files Shared"
+              value={filesUploaded}
+              color="text-orange-400"
+              gradient="from-orange-900/40 to-orange-800/20"
+            />
+          </div>
         </div>
 
         {/* Main Content Grid */}

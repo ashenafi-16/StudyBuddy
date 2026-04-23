@@ -1,10 +1,12 @@
 import React from "react";
-import { MessageCircleIcon } from "lucide-react";
-import { useChatStore } from "../store/useChatStore";
+import { MessageCircleIcon, Search } from "lucide-react";
 
-const NoChatsFound: React.FC<{ message?: string }> = ({ message = "No conversations yet" }) => {
-  const { setActiveTab } = useChatStore();
- 
+interface NoChatsFoundProps {
+  message?: string;
+  onFindContact?: () => void;
+}
+
+const NoChatsFound: React.FC<NoChatsFoundProps> = ({ message = "No conversations yet", onFindContact }) => {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
       <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center">
@@ -13,16 +15,18 @@ const NoChatsFound: React.FC<{ message?: string }> = ({ message = "No conversati
       <div>
         <h4 className="text-slate-200 font-medium mb-1">{message}</h4>
         <p className="text-slate-400 text-sm px-6">
-          Start a new chat by selecting a contact from the contacts tab
+          Search for a user by username to start a new conversation
         </p>
       </div>
       <button
-        onClick={() => setActiveTab("contacts")}
-        className="px-4 py-2 text-sm text-cyan-400 bg-cyan-500/10 rounded-lg hover:bg-cyan-500/20 transition-colors"
+        onClick={onFindContact}
+        className="px-4 py-2 text-sm text-cyan-400 bg-cyan-500/10 rounded-lg hover:bg-cyan-500/20 transition-colors flex items-center gap-2"
       >
+        <Search size={14} />
         Find contacts
       </button>
     </div>
   );
-}
+};
+
 export default NoChatsFound;

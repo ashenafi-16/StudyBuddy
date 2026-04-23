@@ -16,6 +16,15 @@ function ChatPage() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFindContact = () => {
+        setIsSidebarOpen(true);
+        // Small delay to allow sidebar to open before focusing
+        setTimeout(() => {
+            searchInputRef.current?.focus();
+        }, 350);
+    };
 
     const handleUserSelect = () => {
         setIsSidebarOpen(false);
@@ -130,6 +139,7 @@ function ChatPage() {
                                     size={16}
                                 />
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
                                     placeholder={activeTab === 'chats' ? 'Search users by username...' : 'Search groups by name...'}
                                     value={searchQuery}
@@ -210,7 +220,7 @@ function ChatPage() {
                                     ))}
                                 </div>
                             ) : (
-                                activeTab === "chats" ? <ChatsList searchQuery={searchQuery} /> : <ContactList searchQuery={searchQuery} />
+                                activeTab === "chats" ? <ChatsList searchQuery={searchQuery} onFindContact={handleFindContact} /> : <ContactList searchQuery={searchQuery} />
                             )}
                         </div>
 

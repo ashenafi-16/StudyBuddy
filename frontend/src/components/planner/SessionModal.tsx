@@ -152,8 +152,14 @@ export default function SessionModal({
             setLoading(true);
             const updatedSession = await startSession(parseInt(existingEvent.id));
             toast.success('Meeting started!');
-            // Open the Jitsi meeting in a new tab
-            window.open(updatedSession.meeting_url, '_blank');
+            // Open the Jitsi meeting in a new tab with user's display name
+            const displayName = user?.first_name && user?.last_name
+                ? `${user.first_name} ${user.last_name}`
+                : user?.username || 'Student';
+            const meetingUrl = updatedSession.meeting_url.includes('#')
+                ? `${updatedSession.meeting_url}&userInfo.displayName=${encodeURIComponent(displayName)}`
+                : `${updatedSession.meeting_url}#userInfo.displayName=${encodeURIComponent(displayName)}`;
+            window.open(meetingUrl, '_blank');
             onSuccess();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to start meeting');
@@ -164,7 +170,14 @@ export default function SessionModal({
 
     const handleJoinMeeting = () => {
         if (existingEvent?.extendedProps.meeting_url) {
-            window.open(existingEvent.extendedProps.meeting_url, '_blank');
+            const displayName = user?.first_name && user?.last_name
+                ? `${user.first_name} ${user.last_name}`
+                : user?.username || 'Student';
+            const baseUrl = existingEvent.extendedProps.meeting_url;
+            const meetingUrl = baseUrl.includes('#')
+                ? `${baseUrl}&userInfo.displayName=${encodeURIComponent(displayName)}`
+                : `${baseUrl}#userInfo.displayName=${encodeURIComponent(displayName)}`;
+            window.open(meetingUrl, '_blank');
         }
     };
 

@@ -352,7 +352,7 @@ export default function Profile() {
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
               {/* Avatar */}
               <div className="relative group">
-                <div className="w-32 h-32 rounded-2xl border-4 border-[#0f172a] overflow-hidden bg-slate-800 shadow-2xl">
+                <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0f172a] overflow-hidden bg-slate-800 shadow-2xl">
                   <img
                     src={getProfilePicUrl(formData.profile_pic_url)}
                     alt="Profile"
@@ -362,7 +362,7 @@ export default function Profile() {
                 {isEditing && (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                    className="absolute inset-0 bg-black/60 rounded-xl sm:rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
                   >
                     <Camera className="text-white" size={28} />
                   </button>

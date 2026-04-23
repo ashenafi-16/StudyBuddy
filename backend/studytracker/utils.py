@@ -24,7 +24,7 @@ def record_activity_and_update_streak(user, duration=1):
         # OR if they have > 10 but their streak last_active_date is still yesterday.
         streak, _ = StudyStreak.objects.select_for_update().get_or_create(user=user)
         
-        if activity.duration_minutes >= 10 and streak.last_active_date != today:
+        if activity.duration_minutes >= 15 and streak.last_active_date != today:
             _process_streak_increment(user, streak, today)
 
 def _process_streak_increment(user, streak, today):

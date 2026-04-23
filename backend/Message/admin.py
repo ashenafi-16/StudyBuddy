@@ -2,9 +2,7 @@ from django.contrib import admin
 from .models import Conversation, ConversationMember, Message
 
 
-# -------------------------
-#  ConversationMember Inline
-# -------------------------
+
 
 class ConversationMemberInline(admin.TabularInline):
     model = ConversationMember
@@ -13,9 +11,7 @@ class ConversationMemberInline(admin.TabularInline):
     ordering = ('user__email',)
 
 
-# -------------------------
-#  Message Inline
-# -------------------------
+
 
 class MessageInline(admin.TabularInline):
     model = Message
@@ -36,9 +32,6 @@ class MessageInline(admin.TabularInline):
     ordering = ('timestamp',)
 
 
-# -------------------------
-#  Conversation Admin
-# -------------------------
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
@@ -58,9 +51,6 @@ class ConversationAdmin(admin.ModelAdmin):
     )
 
 
-# -------------------------
-#  ConversationMember Admin
-# -------------------------
 
 @admin.register(ConversationMember)
 class ConversationMemberAdmin(admin.ModelAdmin):
@@ -70,9 +60,6 @@ class ConversationMemberAdmin(admin.ModelAdmin):
     readonly_fields = ('joined_at',)
 
 
-# -------------------------
-#  Message Admin
-# -------------------------
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):

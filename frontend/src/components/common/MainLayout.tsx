@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import { useStudyTracker } from '../../hooks/useStudyTracker';
 
 /**
  * MainLayout - Fixed sidebar layout that persists across all protected pages
@@ -9,6 +10,9 @@ import Navbar from './Navbar';
  */
 export default function MainLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Track study activity globally — sends heartbeat every 60s while user is on the platform
+    useStudyTracker(true);
 
     return (
         <div className="flex h-screen bg-[#0f172a] overflow-hidden relative">

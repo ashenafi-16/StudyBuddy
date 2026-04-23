@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Check, Star, Shield, Zap, AlertCircle } from "lucide-react";
-import { fetchSubscriptionPlans, verifyPayment, type SubscriptionPlan } from "../api/subscriptionApi";
+import { fetchSubscriptionPlans, subscribeToPlan, verifyPayment, type SubscriptionPlan } from "../api/subscriptionApi";
 import { Loading } from "../components/common/LoadingError";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -11,6 +11,7 @@ export default function SubscriptionPage() {
     const [loading, setLoading] = useState(true);
     const { loadProfile, subscriptions } = useAuth();
     const navigate = useNavigate();
+    const [submittingPlan, setSubmittingPlan] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -50,10 +51,8 @@ export default function SubscriptionPage() {
             // Remove query params
             window.history.replaceState({}, document.title, window.location.pathname);
 
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1500);
+            // Redirect to dashboard immediately
+            navigate('/dashboard');
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Payment verification failed");
             setLoading(false);
@@ -61,6 +60,23 @@ export default function SubscriptionPage() {
     };
 
 
+    const handleSubscribe = async (planId: number) => {
+        try {
+            setSubmittingPlan(planId);
+            const response = await subscribeToPlan(planId);
+
+            if (response.checkout_url) {
+                window.location.href = response.checkout_url;
+            } else {
+                toast.error("Failed to get checkout URL");
+            }
+        } catch (error: any) {
+            console.error("Subscription failed", error);
+            toast.error(error.response?.data?.message || "Failed to initiate subscription");
+        } finally {
+            setSubmittingPlan(null);
+        }
+    };
 
     if (loading) return <Loading />;
 
@@ -153,13 +169,34 @@ export default function SubscriptionPage() {
                                         ))}
                                     </ul>
 
-                                    {isCurrentPlan && (
+                                    {isCurrentPlan ? (
                                         <button
                                             disabled
                                             className="w-full py-4 px-6 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default flex items-center justify-center gap-2"
                                         >
                                             <Shield size={18} />
                                             Current Plan
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleSubscribe(plan.id)}
+                                            disabled={submittingPlan !== null}
+                                            className={`w-full py-4 px-6 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${submittingPlan === plan.id
+                                                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                                                : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98]'
+                                                }`}
+                                        >
+                                            {submittingPlan === plan.id ? (
+                                                <>
+                                                    <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Zap size={18} />
+                                                    Subscribe Now
+                                                </>
+                                            )}
                                         </button>
                                     )}
                                 </div>

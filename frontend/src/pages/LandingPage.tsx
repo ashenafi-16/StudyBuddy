@@ -39,7 +39,7 @@ const features = [
   {
     icon: <Sparkles className="w-7 h-7" />,
     title: "Premium Access",
-    description: "Unlock advanced features, custom themes, and analytics with a subscription.",
+    description: "Unlock unlimited groups, AI recommendations, full Pomodoro statistics, priority support, and exclusive study materials.",
     gradient: "from-indigo-500 to-violet-500",
   },
 ];

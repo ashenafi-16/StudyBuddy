@@ -6,9 +6,10 @@ import NoChatsFound from "./NoChatsFound";
 
 interface ChatsListProps {
   searchQuery?: string;
+  onFindContact?: () => void;
 }
 
-function ChatsList({ searchQuery = "" }: ChatsListProps) {
+function ChatsList({ searchQuery = "", onFindContact }: ChatsListProps) {
   const { getAllIndividualContacts, chats = [], isUsersLoading, setSelectedUser, selectedUser, onlineUsers, typingUsers } = useChatStore();
   const { user } = useAuth();
 
@@ -26,7 +27,7 @@ function ChatsList({ searchQuery = "" }: ChatsListProps) {
   }, [chats, searchQuery, user?.id]);
 
   if (isUsersLoading) return <UsersLoadingSkeleton />;
-  if (!chats || chats.length === 0) return <NoChatsFound />;
+  if (!chats || chats.length === 0) return <NoChatsFound onFindContact={onFindContact} />;
 
   return (
     <div className="space-y-0.5">

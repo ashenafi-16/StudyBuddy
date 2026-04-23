@@ -69,7 +69,7 @@ class StudySession(models.Model):
     @property
     def meeting_url(self):
         """Generate Jitsi meeting URL."""
-        return f"https://meet.jit.si/StudyBuddy_{self.meeting_id}"
+        return f"https://meet.jit.si/StudyBuddy_{self.meeting_id}#config.prejoinPageEnabled=false"
 
     @property
     def is_active(self):
