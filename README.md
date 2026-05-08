@@ -20,40 +20,47 @@ A modern, real-time collaboration platform that brings your study group online �
 
 ---
 
-## 🎬 Platform Walkthrough
+## 🎬 Platform Demo
 
-> **Sign Up → Subscribe → Dashboard → Search → Chat** — the complete user journey.
+> **Landing → Login → Dashboard → Groups → Chat → Planner → Pomodoro → Resources → Profile** — a quick tour of the entire platform.
 
-<table>
-<tr>
-<td width="50%">
+<div align="center">
+<img src="frontend/public/demo/studybuddy_demo.webp" alt="StudyBuddy Platform Demo" width="100%" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+</div>
 
-**1. Account Registration**
+---
 
-New users register with username, email, and password. Seamless redirect to subscription selection.
+### ⚡ Quick Setup
 
-</td>
-<td width="50%">
+```bash
+# 1. Clone & install
+git clone https://github.com/ashenafi-16/StudyBuddy.git && cd StudyBuddy
 
-**2. Subscription & Payment**
+# 2. Backend
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # configure your keys (see Getting Started below)
+python manage.py migrate
+python manage.py seed_plans
+python manage.py runserver    # → http://localhost:8000
 
-Tiered plans (1/3/6/12 Month) with secure Chapa payment integration. Instant Pro Member activation.
+# 3. Frontend
+cd ../frontend
+npm install
+cp .env.example .env          # set VITE_API_URL & VITE_WS_URL
+npm run dev                   # → http://localhost:5173
+```
 
-</td>
-</tr>
-<tr>
-<td>
-
-<img src="frontend/public/screenshots/signup.png" alt="Sign Up" width="100%"/>
-
-</td>
-<td>
-
-<img src="frontend/public/screenshots/subscription.png" alt="Subscription" width="100%"/>
-
-</td>
-</tr>
-</table>
+| Variable | Description |
+|:---|:---|
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `DATABASE_URL` | PostgreSQL or `sqlite:///db.sqlite3` for dev |
+| `CLOUDINARY_*` | Cloud name, API key & secret |
+| `CHAPA_SECRET_KEY` | Chapa payment gateway key |
+| `REDIS_URL` | Redis URL for WebSockets & Celery |
+| `VITE_API_URL` | Backend API URL (e.g. `http://127.0.0.1:8000`) |
+| `VITE_WS_URL` | WebSocket URL (e.g. `ws://127.0.0.1:8000`) |
 
 ---
 
