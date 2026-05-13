@@ -4,9 +4,8 @@
 ### *Study Smarter, Together.*
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-study--buddy-00D4AA?style=for-the-badge)](https://study-buddy-pied-five.vercel.app)
-[![License](https://img.shields.io/badge/License-MIT-22C55E.svg?style=for-the-badge)](LICENSE)
 
-<img src="frontend/public/screenshots/landing.png" alt="StudyBuddy" width="100%" style="border-radius: 12px; shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+
 
 </div>
 
